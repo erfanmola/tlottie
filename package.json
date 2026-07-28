@@ -1,0 +1,139 @@
+{
+	"name": "tlottie",
+	"version": "0.1.0",
+	"description": "Fast, web-worker based Lottie/TGS renderer with adapters for React, SolidJS, Vue, Svelte, Web Components and Vanilla JS, backed by the tlottie Rust/WASM engine.",
+	"license": "MIT",
+	"author": "Erfan Mola <hi@erfanxd.ir>",
+	"homepage": "https://github.com/erfanmola/tlottie#readme",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/erfanmola/tlottie.git"
+	},
+	"bugs": {
+		"url": "https://github.com/erfanmola/tlottie/issues"
+	},
+	"keywords": [
+		"lottie",
+		"tgs",
+		"telegram-sticker",
+		"animation",
+		"wasm",
+		"webassembly",
+		"web-worker",
+		"offscreencanvas",
+		"canvas",
+		"react",
+		"solid",
+		"solidjs",
+		"vue",
+		"svelte",
+		"web-components",
+		"rust"
+	],
+	"type": "module",
+	"engines": {
+		"node": ">=18"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"sideEffects": [
+		"./dist/webcomponent/*.js",
+		"*.scss",
+		"*.css"
+	],
+	"main": "./dist/core/index.js",
+	"module": "./dist/core/index.js",
+	"types": "./dist/core/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/core/index.d.ts",
+			"import": "./dist/core/index.js"
+		},
+		"./vanilla": {
+			"types": "./dist/vanilla/index.d.ts",
+			"import": "./dist/vanilla/index.js"
+		},
+		"./vanilla/style.css": "./dist/vanilla/tlottie.css",
+		"./webcomponent": {
+			"types": "./dist/webcomponent/index.d.ts",
+			"import": "./dist/webcomponent/index.js"
+		},
+		"./webcomponent/style.css": "./dist/webcomponent/tlottie.css",
+		"./react": {
+			"types": "./dist/react/index.d.ts",
+			"import": "./dist/react/index.js"
+		},
+		"./react/style.css": "./dist/react/tlottie.css",
+		"./solid": {
+			"types": "./dist/solid/index.d.ts",
+			"import": "./dist/solid/index.js"
+		},
+		"./solid/style.css": "./dist/solid/tlottie.css",
+		"./vue": {
+			"types": "./dist/vue/index.d.ts",
+			"import": "./dist/vue/index.js"
+		},
+		"./vue/style.css": "./dist/vue/tlottie.css",
+		"./svelte": {
+			"types": "./dist/svelte/index.d.ts",
+			"import": "./dist/svelte/index.js"
+		},
+		"./svelte/style.css": "./dist/svelte/tlottie.css",
+		"./package.json": "./package.json"
+	},
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build:wasm": "sh scripts/build-wasm.sh",
+		"build": "bun scripts/build.ts",
+		"dev": "vite --config demo/vite.config.ts",
+		"typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.react.json && tsc --noEmit -p tsconfig.solid.json",
+		"lint": "bun run typecheck && bunx --bun @biomejs/biome check --write --unsafe src demo",
+		"prepublishOnly": "bun run lint && bun run build"
+	},
+	"peerDependencies": {
+		"react": "^18 || ^19",
+		"react-dom": "^18 || ^19",
+		"solid-js": "^1",
+		"svelte": "^4 || ^5",
+		"vue": "^3"
+	},
+	"peerDependenciesMeta": {
+		"react": {
+			"optional": true
+		},
+		"react-dom": {
+			"optional": true
+		},
+		"solid-js": {
+			"optional": true
+		},
+		"svelte": {
+			"optional": true
+		},
+		"vue": {
+			"optional": true
+		}
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.5.6",
+		"@sveltejs/vite-plugin-svelte": "^5.0.0",
+		"@types/react": "^19.2.17",
+		"@types/react-dom": "^19.2.3",
+		"@typescript/typescript6": "^6.0.2",
+		"@vitejs/plugin-react": "^4.3.4",
+		"@vitejs/plugin-vue": "^5.2.1",
+		"react": "^19.0.0",
+		"react-dom": "^19.0.0",
+		"sass": "^1.102.0",
+		"solid-js": "^1.9.3",
+		"svelte": "^5.15.0",
+		"typescript": "~7.0.2",
+		"vite": "^8.1.5",
+		"vite-plugin-dts": "^5.0.3",
+		"vite-plugin-solid": "^2.11.2",
+		"vue": "^3.5.13"
+	}
+}

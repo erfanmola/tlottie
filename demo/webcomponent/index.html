@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>tlottie — web component</title>
+		<link rel="stylesheet" href="../demo.css" />
+	</head>
+	<body>
+		<a href="../">&larr; back</a>
+		<h1>Web Component</h1>
+		<tlottie-player id="player" src="/assets/sample.json" loop autoplay worker-count="2"></tlottie-player>
+		<div id="controls" class="controls"></div>
+		<pre id="status" class="status"></pre>
+		<p>Declarative usage: <code>&lt;tlottie-player src="..." loop autoplay&gt;&lt;/tlottie-player&gt;</code></p>
+		<script type="module" src="./main.ts"></script>
+	</body>
+</html>

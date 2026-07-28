@@ -1,0 +1,9 @@
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"lib": ["ES2023", "WebWorker"],
+		"types": []
+	},
+	"exclude": ["src/react", "src/solid", "src/vue", "src/svelte", "src/main", "src/vanilla", "src/webcomponent", "src/worker/pool.ts"],
+	"include": ["src/worker", "src/core"]
+}

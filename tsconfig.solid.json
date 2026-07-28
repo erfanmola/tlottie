@@ -1,0 +1,9 @@
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"jsx": "preserve",
+		"jsxImportSource": "solid-js"
+	},
+	"exclude": ["src/react", "src/vue", "src/svelte", "src/worker"],
+	"include": ["src/solid"]
+}

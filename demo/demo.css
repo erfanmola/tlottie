@@ -1,0 +1,61 @@
+:root {
+	color-scheme: light dark;
+	font-family: system-ui, -apple-system, sans-serif;
+}
+
+body {
+	margin: 0;
+	padding: 24px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	max-width: 720px;
+}
+
+h1 {
+	font-size: 1.25rem;
+	margin: 0;
+}
+
+nav a {
+	margin-right: 12px;
+}
+
+.tlottie-player {
+	width: 240px;
+	height: 240px;
+	resize: both;
+	overflow: auto;
+	border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+	border-radius: 12px;
+}
+
+.controls {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	align-items: center;
+}
+
+.controls label {
+	display: flex;
+	gap: 4px;
+	align-items: center;
+	font-size: 0.85rem;
+}
+
+button {
+	cursor: pointer;
+}
+
+.status {
+	font-family: ui-monospace, monospace;
+	font-size: 0.75rem;
+	opacity: 0.8;
+	white-space: pre-wrap;
+	max-height: 160px;
+	overflow-y: auto;
+	border: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+	border-radius: 8px;
+	padding: 8px;
+}

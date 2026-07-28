@@ -1,0 +1,86 @@
+// Layering + skeleton shimmer for the tlottie player wrapper. The sweep
+// animates a pseudo-element's `transform` only (never `background-position`
+// or any other property that forces paint) — the browser can composite a
+// GPU layer translation without repainting every frame. The animation is
+// also explicitly paused while hidden: an `opacity: 0` element still runs
+// its keyframe animation (and the paint/style work that comes with it)
+// unless told to stop.
+
+.tlottie-player {
+	position: relative;
+	overflow: hidden;
+
+	> canvas {
+		position: absolute;
+		inset: 0;
+		z-index: 2;
+		width: 100%;
+		height: 100%;
+		opacity: 0;
+		transition: opacity 0.15s ease-out;
+
+		&.tlottie-ready {
+			opacity: 1;
+		}
+	}
+
+	> .tlottie-shimmer {
+		position: absolute;
+		inset: 0;
+		z-index: 1;
+		width: 100%;
+		height: 100%;
+		overflow: hidden;
+		mask-repeat: no-repeat;
+		mask-size: contain;
+		mask-position: center;
+		-webkit-mask-repeat: no-repeat;
+		-webkit-mask-size: contain;
+		-webkit-mask-position: center;
+		background-color: rgba(128, 128, 128, 0.15);
+		opacity: 1;
+		transition: opacity 0.15s ease-out;
+		pointer-events: none;
+
+		// The moving part: a wide gradient bar, translated across the
+		// (static) masked area. Only ever animates `transform` — paints
+		// once, then the compositor slides it for free.
+		&::after {
+			content: "";
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			left: -60%;
+			width: 60%;
+			background: linear-gradient(90deg, transparent, rgba(128, 128, 128, 0.4), transparent);
+			animation: tlottie-shimmer-sweep 1.6s ease-in-out infinite;
+			will-change: transform;
+		}
+
+		&.tlottie-hidden {
+			opacity: 0;
+
+			// Stops the keyframe animation (and its per-frame compositor
+			// work) entirely while the shimmer isn't visible, instead of
+			// leaving it running behind an opacity:0 element.
+			&::after {
+				animation-play-state: paused;
+			}
+		}
+	}
+}
+
+@keyframes tlottie-shimmer-sweep {
+	from {
+		transform: translateX(0);
+	}
+	to {
+		transform: translateX(266%);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.tlottie-player > .tlottie-shimmer::after {
+		animation: none;
+	}
+}

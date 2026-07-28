@@ -1,0 +1,5 @@
+{
+	"extends": "./tsconfig.json",
+	"exclude": ["src/react", "src/solid", "src/vue", "src/worker/tlottie.worker.ts"],
+	"include": ["src/svelte"]
+}

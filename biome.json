@@ -1,0 +1,66 @@
+{
+	"$schema": "https://biomejs.dev/schemas/latest/schema.json",
+	"files": {
+		"includes": ["**", "!dist", "!target-wasm", "!tlottie", "!node_modules", "!src/core/tlottie.wasm"]
+	},
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "tab",
+		"bracketSpacing": true
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"a11y": {
+				"noSvgWithoutTitle": "off",
+				"useMediaCaption": "off",
+				"useKeyWithClickEvents": "off",
+				"noStaticElementInteractions": "off",
+				"useAltText": "off"
+			},
+			"suspicious": {
+				"noExplicitAny": "off"
+			},
+			"style": {
+				"noNonNullAssertion": "off",
+				"noParameterAssign": "off"
+			},
+			"performance": {
+				"noDelete": "off"
+			}
+		},
+		"includes": ["src/**/*.tsx", "src/**/*.ts", "demo/**/*.tsx", "demo/**/*.ts"]
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "double",
+			"jsxQuoteStyle": "double",
+			"arrowParentheses": "always",
+			"indentStyle": "tab",
+			"semicolons": "always",
+			"trailingCommas": "all"
+		}
+	},
+	"json": {
+		"formatter": {
+			"enabled": true,
+			"indentStyle": "tab"
+		},
+		"linter": {
+			"enabled": true
+		}
+	},
+	"css": {
+		"formatter": {
+			"enabled": true,
+			"indentStyle": "tab",
+			"quoteStyle": "double"
+		},
+		"linter": {
+			"enabled": true
+		},
+		"parser": {
+			"tailwindDirectives": true
+		}
+	}
+}
