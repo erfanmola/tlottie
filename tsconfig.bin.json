@@ -1,0 +1,9 @@
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"lib": ["ES2023", "DOM"],
+		"types": ["node"]
+	},
+	"exclude": ["src/react", "src/solid", "src/vue", "src/svelte", "src/worker/tlottie.worker.ts", "src/main", "src/vanilla", "src/webcomponent"],
+	"include": ["src/bin"]
+}

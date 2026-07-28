@@ -20,5 +20,5 @@
     "noFallthroughCasesInSwitch": true
   },
   "include": ["src"],
-  "exclude": ["src/react", "src/solid", "src/vue", "src/svelte", "src/worker/tlottie.worker.ts"]
+  "exclude": ["src/react", "src/solid", "src/vue", "src/svelte", "src/worker/tlottie.worker.ts", "src/bin"]
 }

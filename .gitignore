@@ -29,3 +29,7 @@ dist-demo
 *.tgz
 .npmrc
 *.tsbuildinfo
+
+# local Claude Code state (skills/ stays tracked)
+.claude/settings.local.json
+.claude/scheduled_tasks.lock

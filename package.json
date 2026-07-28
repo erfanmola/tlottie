@@ -1,6 +1,6 @@
 {
 	"name": "tlottie",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"description": "Fast, web-worker based Lottie/TGS renderer with adapters for React, SolidJS, Vue, Svelte, Web Components and Vanilla JS, backed by the tlottie Rust/WASM engine.",
 	"license": "MIT",
 	"author": "Erfan Mola <hi@erfanxd.ir>",
@@ -45,6 +45,9 @@
 	"main": "./dist/core/index.js",
 	"module": "./dist/core/index.js",
 	"types": "./dist/core/index.d.ts",
+	"bin": {
+		"tlottie-outline": "./dist/bin/lottie-to-outline.js"
+	},
 	"exports": {
 		".": {
 			"types": "./dist/core/index.d.ts",
@@ -89,9 +92,10 @@
 		"build:wasm": "sh scripts/build-wasm.sh",
 		"build": "bun scripts/build.ts",
 		"dev": "vite --config demo/vite.config.ts",
-		"typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.react.json && tsc --noEmit -p tsconfig.solid.json",
+		"typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.react.json && tsc --noEmit -p tsconfig.solid.json && tsc --noEmit -p tsconfig.worker.json && tsc --noEmit -p tsconfig.bin.json",
 		"lint": "bun run typecheck && bunx --bun @biomejs/biome check --write --unsafe src demo",
-		"prepublishOnly": "bun run lint && bun run build"
+		"prepublishOnly": "bun run lint && bun run build",
+		"outline": "bun run src/bin/lottie-to-outline.ts"
 	},
 	"peerDependencies": {
 		"react": "^18 || ^19",
@@ -119,21 +123,26 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.5.6",
-		"@sveltejs/vite-plugin-svelte": "^5.0.0",
+		"@sveltejs/vite-plugin-svelte": "^7.2.0",
+		"@types/node": "^26.1.2",
 		"@types/react": "^19.2.17",
 		"@types/react-dom": "^19.2.3",
 		"@typescript/typescript6": "^6.0.2",
-		"@vitejs/plugin-react": "^4.3.4",
-		"@vitejs/plugin-vue": "^5.2.1",
-		"react": "^19.0.0",
-		"react-dom": "^19.0.0",
+		"@vitejs/plugin-react": "^6.0.4",
+		"@vitejs/plugin-vue": "^6.0.8",
+		"binaryen": "^131.0.0",
+		"react": "^19.2.8",
+		"react-dom": "^19.2.8",
 		"sass": "^1.102.0",
-		"solid-js": "^1.9.3",
-		"svelte": "^5.15.0",
+		"solid-js": "^1.9.14",
+		"svelte": "^5.56.8",
 		"typescript": "~7.0.2",
 		"vite": "^8.1.5",
 		"vite-plugin-dts": "^5.0.3",
-		"vite-plugin-solid": "^2.11.2",
-		"vue": "^3.5.13"
+		"vite-plugin-solid": "^2.11.14",
+		"vue": "^3.5.40"
+	},
+	"dependencies": {
+		"@neplex/vectorizer": "^0.1.0"
 	}
 }

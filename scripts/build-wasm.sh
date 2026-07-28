@@ -1,11 +1,27 @@
 #!/bin/sh
 # Builds tlottie.wasm from the tlottie/ submodule (raw wasm32-unknown-unknown,
-# no JS glue — see tlottie/src/bindings/wasm.rs) and copies it into
-# src/core/tlottie.wasm, where the TS wasm loader (src/core/wasm.ts) expects it.
+# no JS glue — see tlottie/src/bindings/wasm.rs), post-processes it with
+# wasm-opt, and copies it into src/core/tlottie.wasm, where the TS wasm
+# loader (src/core/wasm.ts) expects it.
 #
 # Consumers of the built npm package never need a Rust toolchain: the wasm
 # binary is committed as a source asset, this script is only for rebuilding
 # it after pulling submodule updates or changing the Rust source.
+#
+# Size/speed, measured on the current build (2026-07), 512x512, avg ms/frame:
+#   cargo release profile (opt-level=3), untouched:   488 KB raw, 0.251ms/frame
+#   + wasm-opt -Oz (this script):                      418 KB raw, 0.241ms/frame
+#   [rejected] cargo release-size (opt-level=z)
+#     + wasm-opt -Oz:                                  306 KB raw, 0.382ms/frame
+# release-size (opt-level=z) gets ~37% smaller but is a real ~52% slower
+# render path (worse codegen, not just DCE) — not worth it given both are
+# already >2000fps theoretical, nowhere near a real bottleneck, and
+# performance is the priority here. wasm-opt -Oz on the *release* profile
+# gets a free ~14% size cut (pure DCE/strip) with no speed cost — that's
+# what this script uses. The realistic wire size is smaller still: browsers
+# negotiate gzip/brotli transparently over fetch(), so make sure whatever
+# serves dist/tlottie.wasm sends Content-Encoding (most CDNs/static hosts do
+# this automatically; a bare dev server might not).
 
 set -eu
 
@@ -43,6 +59,26 @@ else
   $build_cmd
 fi
 
+built="$CARGO_TARGET_DIR/$target/$profile/tlottie.wasm"
 mkdir -p "$repo_root/src/core"
-cp "$CARGO_TARGET_DIR/$target/$profile/tlottie.wasm" "$repo_root/src/core/tlottie.wasm"
-echo "Built $repo_root/src/core/tlottie.wasm"
+
+if command -v bunx >/dev/null 2>&1; then
+  bunx -p binaryen wasm-opt \
+    -Oz \
+    --enable-simd \
+    --enable-nontrapping-float-to-int \
+    --enable-bulk-memory \
+    --enable-sign-ext \
+    --enable-mutable-globals \
+    --strip-debug \
+    --strip-producers \
+    --dce \
+    --vacuum \
+    "$built" \
+    -o "$repo_root/src/core/tlottie.wasm"
+else
+  echo "warning: bunx not found, skipping wasm-opt — output will be larger than usual" >&2
+  cp "$built" "$repo_root/src/core/tlottie.wasm"
+fi
+
+echo "Built $repo_root/src/core/tlottie.wasm ($(wc -c < "$repo_root/src/core/tlottie.wasm" | tr -d ' ') bytes)"

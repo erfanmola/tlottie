@@ -4,7 +4,7 @@
 // so they can't share a single Vite config.
 import { $ } from "bun";
 
-const configs = ["vite.core.config.ts", "vite.vanilla.config.ts", "vite.webcomponent.config.ts", "vite.react.config.ts", "vite.solid.config.ts", "vite.vue.config.ts", "vite.svelte.config.ts"];
+const configs = ["vite.core.config.ts", "vite.vanilla.config.ts", "vite.webcomponent.config.ts", "vite.react.config.ts", "vite.solid.config.ts", "vite.vue.config.ts", "vite.svelte.config.ts", "vite.bin.config.ts"];
 
 for (const config of configs) {
 	console.log(`\n> vite build --config ${config}`);

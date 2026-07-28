@@ -8,8 +8,8 @@ Fast, Web Worker–based [Lottie](https://airbnb.io/lottie/) and TGS (Telegram s
 - **Off the main thread.** Parsing and rendering happen in a configurable pool of Web Workers, drawing into an `OffscreenCanvas` — no jank on the UI thread.
 - **Fast core.** The underlying [tlottie](https://github.com/dkaraush/tlottie) engine benchmarks 23–73% faster frame times than rlottie/thorvg (see its own README for numbers).
 - **TGS support.** Gzipped Lottie (`.tgs`, Telegram stickers) is decompressed in-worker using the browser-native `DecompressionStream` — no `pako`/`fflate` dependency.
-- **Skeleton loading.** Pass an outline SVG and get a CSS `mask-image` shimmer while the animation loads or if it fails.
-- **Small.** Each framework adapter is ~3–4KB gzipped; the shared WASM binary (~480KB) is fetched once and cached, not bundled per adapter.
+- **Skeleton loading.** Pass an outline SVG and get a CSS `mask-image` shimmer while the animation loads or if it fails — generate that SVG with the bundled `tlottie-outline` CLI (`bunx tlottie-outline --input animation.json`).
+- **Small.** Each framework adapter is ~3–4KB gzipped; the shared WASM binary (~418KB raw, ~131KB brotli / ~163KB gzip) is fetched once and cached, not bundled per adapter.
 
 ## Install
 
@@ -107,6 +107,25 @@ Pass a silhouette SVG (as a raw string) via `outline`; it's rendered as a CSS `m
 <LottiePlayer src="/animation.json" outline={outlineSvgString} />
 ```
 
+Generate that outline SVG from a Lottie/`.tgs` file with the bundled `tlottie-outline` CLI — no separate install, works via `bunx`/`npx`, or as an `npm run` script in any project that has `tlottie` installed:
+
+```sh
+bunx tlottie-outline --input animation.json
+# or: npx tlottie-outline --input animation.json
+# writes animation-outline.svg next to it
+```
+
+```
+Usage: tlottie-outline --input <file.json|file.tgs> [--output <file.svg>] [--frame <n>] [--size <px>]
+
+  -i, --input   Path to a Lottie JSON or .tgs (gzipped) file. Required.
+  -o, --output  Path to write the outline SVG. Defaults to <input-without-extension>-outline.svg.
+  -f, --frame   Frame number to trace. Defaults to 0.
+  -s, --size    Raster size (px, square) used for tracing — higher is more accurate and slower. Defaults to 512.
+```
+
+It renders the given frame with tlottie's own wasm renderer (same one the library uses), flattens every visible pixel to a black silhouette, and traces that into an optimized SVG path — the same technique, reimplemented, as [erfanmola/lottie-output-generator](https://github.com/erfanmola/lottie-output-generator) but built on tlottie/wasm instead of thorvg, so it shares this package's gzip decoding and renderer instead of needing its own.
+
 ## Playback control
 
 Every adapter exposes the underlying `TLottie` instance (via `lottieRefCallback` in React/Solid/Svelte, `ref`+`defineExpose` in Vue, or the `.tlottie` property on the custom element / vanilla handle):
@@ -175,12 +194,15 @@ Rebuilding `src/core/tlottie.wasm` from the submodule (only needed after pulling
 bun run build:wasm
 ```
 
+The build uses cargo's `release` profile (`opt-level = 3`, full codegen quality) plus a `wasm-opt -Oz` pass for dead-code elimination and stripping (via the `binaryen` devDependency, no system install needed) — 488KB → 418KB raw, with no measurable render-speed cost (benchmarked; `opt-level = "z"` gets smaller still but is a real ~50% slower render path, not worth it here). What actually ships over the wire is smaller still, since `fetch()` transparently negotiates compression: 163KB gzip, 131KB brotli. Make sure whatever serves `dist/tlottie.wasm` in production sends `Content-Encoding` (most CDNs and static hosts do this automatically — a bare/unconfigured dev server might not).
+
 ### Repo layout
 
 - `src/core/` — WASM loader, memory management, gzip decompression, framework-agnostic playback clock
 - `src/worker/` — the render worker and its worker-pool
 - `src/main/` — main-thread facade (`TLottie` class), fetch cache, shimmer helper
 - `src/{vanilla,webcomponent,react,solid,vue,svelte}/` — framework adapters
+- `src/bin/` — the `tlottie-outline` CLI
 - `demo/` — a page per adapter, exercising load/play/error/gzip/resize
 
 ## License
