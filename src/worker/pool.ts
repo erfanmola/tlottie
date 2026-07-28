@@ -1,10 +1,11 @@
-// Small default so a page with many players doesn't spin up one worker per
-// core; callers who profile their own workload can raise this with
+// Each worker owns its own wasm module instance (~1MB+ of memory once
+// loaded), so sizing this off navigator.hardwareConcurrency ends up
+// spinning up several megabytes of workers on typical 8-16 core machines
+// for zero benefit on most pages. A single shared worker already
+// multiplexes any number of animations fine; callers who actually profile
+// a worker-bound workload can raise this with
 // configureTLottie({ workerCount }) or a per-pool setSize().
-const DEFAULT_POOL_SIZE =
-	typeof navigator !== "undefined" && navigator.hardwareConcurrency
-		? Math.max(1, Math.min(4, Math.floor(navigator.hardwareConcurrency / 2)))
-		: 2;
+const DEFAULT_POOL_SIZE = 1;
 
 /** Round-robin pool of tlottie render workers, grown lazily up to `size`. */
 export class TLottieWorkerPool {

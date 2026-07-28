@@ -142,7 +142,7 @@ tlottie.on("load" | "play" | "pause" | "stop" | "frame" | "loopComplete" | "comp
 
 ### Worker pool
 
-By default all players share one small pool of workers (sized off `navigator.hardwareConcurrency`). Configure it globally before creating any players:
+By default all players share a single worker (one worker already multiplexes any number of animations fine — each worker owns its own WASM module instance, so sizing the default off `navigator.hardwareConcurrency` just burns memory on typical multi-core machines for no benefit). Raise it if you've profiled a worker-bound workload:
 
 ```ts
 import { configureTLottie } from "tlottie";
