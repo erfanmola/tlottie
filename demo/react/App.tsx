@@ -1,9 +1,10 @@
 import { useRef, useState } from "react";
 import { LottiePlayer, type TLottie } from "../../src/react/index.ts";
+import { assetUrl } from "../asset-url.ts";
 import outline from "../assets/outline.svg?raw";
 
 export function App() {
-	const [src, setSrc] = useState("/assets/sample.json");
+	const [src, setSrc] = useState(assetUrl("sample.json"));
 	const [speed, setSpeed] = useState(1);
 	const [loop, setLoop] = useState(true);
 	const [direction, setDirection] = useState<1 | -1>(1);
@@ -71,12 +72,12 @@ export function App() {
 				</label>
 			</div>
 			<div className="controls">
-				<button type="button" onClick={() => setSrc("/assets/sample.tgs")}>
+				<button type="button" onClick={() => setSrc(assetUrl("sample.tgs"))}>
 					Load .tgs (gzip)
 				</button>
 				<button
 					type="button"
-					onClick={() => setSrc("/assets/does-not-exist.json")}
+					onClick={() => setSrc(assetUrl("does-not-exist.json"))}
 				>
 					Load bad URL (error demo)
 				</button>

@@ -1,9 +1,10 @@
 import { createSignal } from "solid-js";
 import { LottiePlayer, type TLottie } from "../../src/solid/index.ts";
+import { assetUrl } from "../asset-url.ts";
 import outline from "../assets/outline.svg?raw";
 
 export function App() {
-	const [src, setSrc] = createSignal("/assets/sample.json");
+	const [src, setSrc] = createSignal(assetUrl("sample.json"));
 	const [speed, setSpeed] = createSignal(1);
 	const [loop, setLoop] = createSignal(true);
 	const [direction, setDirection] = createSignal<1 | -1>(1);
@@ -71,12 +72,12 @@ export function App() {
 				</label>
 			</div>
 			<div class="controls">
-				<button type="button" onClick={() => setSrc("/assets/sample.tgs")}>
+				<button type="button" onClick={() => setSrc(assetUrl("sample.tgs"))}>
 					Load .tgs (gzip)
 				</button>
 				<button
 					type="button"
-					onClick={() => setSrc("/assets/does-not-exist.json")}
+					onClick={() => setSrc(assetUrl("does-not-exist.json"))}
 				>
 					Load bad URL (error demo)
 				</button>

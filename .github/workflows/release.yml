@@ -1,0 +1,72 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - package.json
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      # npm registry is the source of truth for "already published", not
+      # git tags — handles versions published manually (outside CI) too,
+      # like the initial 0.1.0/0.1.2 releases were.
+      - name: Check if package.json version is new
+        id: check
+        run: |
+          LOCAL_VERSION=$(node -p "require('./package.json').version")
+          PUBLISHED_VERSION=$(npm view tlottie version 2>/dev/null || echo "0.0.0")
+          echo "version=$LOCAL_VERSION" >> "$GITHUB_OUTPUT"
+          if [ "$LOCAL_VERSION" != "$PUBLISHED_VERSION" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.check.outputs.changed == 'true'
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        if: steps.check.outputs.changed == 'true'
+        run: bun install --frozen-lockfile
+
+      # bun run lint && bun run build (via package.json's prepublishOnly)
+      # also run automatically as part of `npm publish` below — this
+      # earlier explicit run just fails fast with a clearer step name if
+      # something's broken, instead of failing deep inside npm's lifecycle.
+      - name: Lint
+        if: steps.check.outputs.changed == 'true'
+        run: bun run lint
+
+      - name: Build
+        if: steps.check.outputs.changed == 'true'
+        run: bun run build
+
+      - name: Publish to npm
+        if: steps.check.outputs.changed == 'true'
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release
+        if: steps.check.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v${{ steps.check.outputs.version }}" \
+            --title "v${{ steps.check.outputs.version }}" \
+            --generate-notes

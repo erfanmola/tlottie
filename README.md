@@ -5,6 +5,8 @@
 
 Fast, Web Worker–based [Lottie](https://airbnb.io/lottie/) and TGS (Telegram sticker) renderer, backed by the [tlottie](https://github.com/dkaraush/tlottie) Rust/WASM engine. Ships adapters for **React**, **SolidJS**, **Vue**, **Svelte**, **Web Components**, and **Vanilla JS**.
 
+**[Live demo →](https://erfanmola.github.io/tlottie/)** — one page per adapter.
+
 - **Off the main thread.** Parsing and rendering happen in a configurable pool of Web Workers, drawing into an `OffscreenCanvas` — no jank on the UI thread.
 - **Fast core.** The underlying [tlottie](https://github.com/dkaraush/tlottie) engine benchmarks 23–73% faster frame times than rlottie/thorvg (see its own README for numbers).
 - **TGS support.** Gzipped Lottie (`.tgs`, Telegram stickers) is decompressed in-worker using the browser-native `DecompressionStream` — no `pako`/`fflate` dependency.
@@ -204,6 +206,11 @@ The build uses cargo's `release` profile (`opt-level = 3`, full codegen quality)
 - `src/{vanilla,webcomponent,react,solid,vue,svelte}/` — framework adapters
 - `src/bin/` — the `tlottie-outline` CLI
 - `demo/` — a page per adapter, exercising load/play/error/gzip/resize
+
+### CI
+
+- `.github/workflows/pages.yml` — builds `demo/` and deploys it to [GitHub Pages](https://erfanmola.github.io/tlottie/) on every push to `main`.
+- `.github/workflows/release.yml` — on a `package.json` version bump landing on `main`, publishes to npm and creates a matching GitHub Release with auto-generated notes. Needs an `NPM_TOKEN` repo secret (an npm automation token with publish access) to actually publish; without it the workflow fails at the publish step.
 
 ## License
 

@@ -1,9 +1,10 @@
 <script lang="ts">
 import type { TLottie, TLottieEventPayload } from "../../src/main/TLottie.ts";
 import { LottiePlayer } from "../../src/svelte/index.ts";
+import { assetUrl } from "../asset-url.ts";
 import outline from "../assets/outline.svg?raw";
 
-let src = $state("/assets/sample.json");
+let src = $state(assetUrl("sample.json"));
 let speed = $state(1);
 let loop = $state(true);
 let direction: 1 | -1 = $state(1);
@@ -52,7 +53,7 @@ function onError(p: TLottieEventPayload): void {
 	</label>
 </div>
 <div class="controls">
-	<button type="button" onclick={() => (src = "/assets/sample.tgs")}>Load .tgs (gzip)</button>
-	<button type="button" onclick={() => (src = "/assets/does-not-exist.json")}>Load bad URL (error demo)</button>
+	<button type="button" onclick={() => (src = assetUrl("sample.tgs"))}>Load .tgs (gzip)</button>
+	<button type="button" onclick={() => (src = assetUrl("does-not-exist.json"))}>Load bad URL (error demo)</button>
 </div>
 <pre class="status">{log.join("\n")}</pre>

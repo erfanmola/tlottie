@@ -2,9 +2,10 @@
 import { ref, shallowRef } from "vue";
 import type { TLottie, TLottieEventPayload } from "../../src/main/TLottie.ts";
 import { LottiePlayer } from "../../src/vue/index.ts";
+import { assetUrl } from "../asset-url.ts";
 import outline from "../assets/outline.svg?raw";
 
-const src = ref("/assets/sample.json");
+const src = ref(assetUrl("sample.json"));
 const speed = ref(1);
 const loop = ref(true);
 const direction = ref<1 | -1>(1);
@@ -43,8 +44,8 @@ function onError(p: TLottieEventPayload): void {
 		</label>
 	</div>
 	<div class="controls">
-		<button type="button" @click="src = '/assets/sample.tgs'">Load .tgs (gzip)</button>
-		<button type="button" @click="src = '/assets/does-not-exist.json'">Load bad URL (error demo)</button>
+		<button type="button" @click="src = assetUrl('sample.tgs')">Load .tgs (gzip)</button>
+		<button type="button" @click="src = assetUrl('does-not-exist.json')">Load bad URL (error demo)</button>
 	</div>
 	<pre class="status">{{ log.join("\n") }}</pre>
 </template>

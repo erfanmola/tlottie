@@ -151,12 +151,17 @@ async function main(): Promise<void> {
 	);
 
 	const optimized = await optimize(svg, { multipass: true });
-	// Strip any fixed pixel width/height so the SVG stays scalable as a CSS
-	// mask, and make sure a viewBox matching the traced raster is present.
+	// Keep both width/height AND viewBox on the root <svg>: a viewBox alone
+	// (no intrinsic width/height) makes some browsers — Safari in
+	// particular — fail to compute a natural size for the SVG when it's
+	// used as a `mask-image` data URI, silently falling back to an
+	// unmasked full-rect fill instead of the traced shape. Having both is
+	// the standard, most compatible way to keep an SVG scalable.
 	const finalSvg = optimized
 		.replace(/\s+width="[^"]*"/, "")
 		.replace(/\s+height="[^"]*"/, "")
-		.replace(/<svg(?![^>]*viewBox)/, `<svg viewBox="0 0 ${size} ${size}"`);
+		.replace(/<svg(?![^>]*viewBox)/, `<svg viewBox="0 0 ${size} ${size}"`)
+		.replace(/<svg /, `<svg width="${size}" height="${size}" `);
 
 	writeFileSync(output, finalSvg);
 	instance.drop();

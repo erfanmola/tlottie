@@ -25,6 +25,23 @@ export function copyWasmPlugin(): Plugin {
 }
 
 /**
+ * Same idea as copyWasmPlugin, but for single-target builds (the demo app)
+ * where there's no cross-config sharing concern — copies straight into
+ * whatever outDir this specific build actually resolves to.
+ */
+export function copyWasmToOutDirPlugin(): Plugin {
+	return {
+		name: "tlottie-copy-wasm-to-outdir",
+		apply: "build",
+		writeBundle(options) {
+			const outDir = options.dir ?? "dist";
+			mkdirSync(outDir, { recursive: true });
+			copyFileSync(WASM_SOURCE, `${outDir}/tlottie.wasm`);
+		},
+	};
+}
+
+/**
  * vite-plugin-dts emits declaration files with the source's own
  * `./foo.ts`-style specifiers (needed in source under
  * `allowImportingTsExtensions`) instead of rewriting them to match the
