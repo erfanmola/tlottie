@@ -1,6 +1,6 @@
 {
 	"name": "tlottie",
-	"version": "0.1.4",
+	"version": "0.1.5",
 	"description": "Fast, web-worker based Lottie/TGS renderer with adapters for React, SolidJS, Vue, Svelte, Web Components and Vanilla JS, backed by the tlottie Rust/WASM engine.",
 	"license": "MIT",
 	"author": "Erfan Mola <hi@erfanxd.ir>",
@@ -46,7 +46,7 @@
 	"module": "./dist/core/index.js",
 	"types": "./dist/core/index.d.ts",
 	"bin": {
-		"tlottie-outline": "./dist/bin/lottie-to-outline.js"
+		"tlottie-outline": "dist/bin/lottie-to-outline.js"
 	},
 	"exports": {
 		".": {
