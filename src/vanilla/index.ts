@@ -18,6 +18,8 @@ export interface CreateTLottiePlayerOptions
 	/** Raw SVG string used as a loading/error skeleton via CSS mask-image. */
 	outline?: string;
 	className?: string;
+	/** When set, clicking the canvas calls `play()` — mainly useful for non-looping animations that should replay on click after completing. */
+	playOnClick?: boolean;
 }
 
 export interface TLottiePlayerHandle {
@@ -32,7 +34,7 @@ export function createTLottiePlayer(
 	container: HTMLElement,
 	options: CreateTLottiePlayerOptions,
 ): TLottiePlayerHandle {
-	const { outline, className, ...config } = options;
+	const { outline, className, playOnClick, ...config } = options;
 
 	const wrapper = document.createElement("div");
 	wrapper.className = className
@@ -56,6 +58,9 @@ export function createTLottiePlayer(
 
 	const tlottie = new TLottie({ ...config, canvas });
 
+	const onCanvasClick = playOnClick ? () => tlottie.play() : null;
+	if (onCanvasClick) canvas.addEventListener("click", onCanvasClick);
+
 	const onLoad: TLottieListener = () => {
 		canvas.classList.add("tlottie-ready");
 		shimmer?.classList.add("tlottie-hidden");
@@ -74,6 +79,7 @@ export function createTLottiePlayer(
 		destroy(): void {
 			tlottie.off("load", onLoad);
 			tlottie.off("error", onError);
+			if (onCanvasClick) canvas.removeEventListener("click", onCanvasClick);
 			tlottie.destroy();
 			wrapper.remove();
 		},

@@ -41,6 +41,8 @@ export interface LottiePlayerProps {
 	reportFrames?: boolean;
 	outline?: string;
 	class?: string;
+	/** When set, clicking the canvas calls `play()` — mainly useful for non-looping animations that should replay on click after completing. */
+	playOnClick?: boolean;
 }
 
 const props = defineProps<LottiePlayerProps>();
@@ -160,11 +162,15 @@ watch(
 
 const shimmerStyle = () =>
 	props.outline ? buildShimmerMaskStyle(props.outline) : null;
+
+function onCanvasClick(): void {
+	if (props.playOnClick) tlottieRef.value?.play();
+}
 </script>
 
 <template>
 	<div :class="props.class ? `tlottie-player ${props.class}` : 'tlottie-player'">
-		<canvas :key="sourceKey" ref="canvasEl" :class="{ 'tlottie-ready': loaded }" />
+		<canvas :key="sourceKey" ref="canvasEl" :class="{ 'tlottie-ready': loaded }" @click="onCanvasClick" />
 		<div
 			v-if="props.outline"
 			class="tlottie-shimmer"

@@ -14,6 +14,7 @@ const OBSERVED_ATTRIBUTES = [
 	"outline",
 	"worker-count",
 	"fitz",
+	"play-on-click",
 ] as const;
 const LIVE_TWEAK_ATTRIBUTES = new Set(["speed", "loop", "direction"]);
 
@@ -114,6 +115,7 @@ export class TLottiePlayerElement extends HTMLElement {
 				workerCountAttr !== null ? Number(workerCountAttr) : undefined,
 			fitzModifier:
 				fitzAttr !== null ? (Number(fitzAttr) as FitzModifier) : undefined,
+			playOnClick: this.hasAttribute("play-on-click"),
 		});
 	}
 

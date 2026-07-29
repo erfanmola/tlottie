@@ -11,6 +11,8 @@ import {
 interface Props extends Omit<TLottieConfig, "canvas"> {
 	outline?: string;
 	class?: string;
+	/** When set, clicking the canvas calls `play()` — mainly useful for non-looping animations that should replay on click after completing. */
+	playOnClick?: boolean;
 	onLoad?: (payload: TLottieEventPayload) => void;
 	onError?: (payload: TLottieEventPayload) => void;
 	onComplete?: (payload: TLottieEventPayload) => void;
@@ -34,6 +36,7 @@ let {
 	wasmUrl,
 	outline,
 	class: className,
+	playOnClick,
 	onLoad,
 	onError,
 	onComplete,
@@ -130,11 +133,15 @@ $effect(() => {
 });
 
 const shimmerStyle = $derived(outline ? buildShimmerMaskStyle(outline) : null);
+
+function onCanvasClick(): void {
+	if (playOnClick) tlottie?.play();
+}
 </script>
 
 <div class={className ? `tlottie-player ${className}` : "tlottie-player"}>
 	{#key sourceKey}
-		<canvas bind:this={canvasEl} class={loaded ? "tlottie-ready" : undefined}></canvas>
+		<canvas bind:this={canvasEl} class={loaded ? "tlottie-ready" : undefined} onclick={onCanvasClick}></canvas>
 	{/key}
 	{#if outline}
 		<div class={!loaded || errored ? "tlottie-shimmer" : "tlottie-shimmer tlottie-hidden"} style:mask-image={shimmerStyle?.maskImage} style:-webkit-mask-image={shimmerStyle?.WebkitMaskImage}></div>

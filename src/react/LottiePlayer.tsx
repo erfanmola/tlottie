@@ -12,6 +12,8 @@ export interface LottiePlayerProps
 		Omit<HTMLAttributes<HTMLDivElement>, "onLoad" | "onError"> {
 	/** Raw SVG string used as a loading/error skeleton via CSS mask-image. */
 	outline?: string;
+	/** When set, clicking the canvas calls `play()` — mainly useful for non-looping animations that should replay on click after completing. */
+	playOnClick?: boolean;
 	onLoad?: (payload: TLottieEventPayload) => void;
 	onError?: (payload: TLottieEventPayload) => void;
 	onComplete?: (payload: TLottieEventPayload) => void;
@@ -35,6 +37,7 @@ export function LottiePlayer(props: LottiePlayerProps) {
 		reportFrames,
 		wasmUrl,
 		outline,
+		playOnClick,
 		onLoad,
 		onError,
 		onComplete,
@@ -131,6 +134,7 @@ export function LottiePlayer(props: LottiePlayerProps) {
 				key={reactKeyForSource(src, data)}
 				ref={canvasRef}
 				className={loaded ? "tlottie-ready" : undefined}
+				onClick={playOnClick ? () => tlottieRef.current?.play() : undefined}
 			/>
 			{outline ? (
 				<div

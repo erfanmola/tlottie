@@ -160,6 +160,7 @@ tlottie.on("load" | "play" | "pause" | "stop" | "frame" | "loopComplete" | "comp
 | `workerCount`       | `number`                                    | Spins up a dedicated worker pool of this size just for this player.                          |
 | `forceRender`       | `boolean`                                   | Keep rendering while off-screen (skips the IntersectionObserver auto-pause).                 |
 | `reportFrames`      | `boolean`                                   | Emit throttled (~10Hz) `frame` events, for progress UIs. Off by default (costs a `postMessage` per emission). |
+| `playOnClick`       | `boolean`                                   | Clicking the canvas calls `play()`. Mainly for non-looping animations: they play once, then replay on each click. |
 
 ### Worker pool
 
