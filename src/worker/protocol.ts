@@ -48,7 +48,8 @@ export type MainToWorkerMessage =
 			id: string;
 			fitzModifier?: FitzModifier;
 			layerColorReplacements?: LayerColorReplacementInput[];
-	  };
+	  }
+	| { type: "warmup"; requestId: string; wasmUrl: string };
 
 export type WorkerToMainMessage =
 	| {
@@ -71,4 +72,6 @@ export type WorkerToMainMessage =
 			event: PlayerEventName;
 			frames: PlayerFrameSnapshot;
 	  }
-	| { type: "error"; id: string; error: TLottieError };
+	| { type: "error"; id: string; error: TLottieError }
+	| { type: "warmed"; requestId: string }
+	| { type: "warmup-error"; requestId: string; message: string };

@@ -1,4 +1,5 @@
 import "../style/shimmer.scss";
+import { initializeTLottie } from "../main/initialize.ts";
 import { buildShimmerMaskStyle } from "../main/shimmer.ts";
 import {
 	configureTLottie,
@@ -8,8 +9,9 @@ import {
 } from "../main/TLottie.ts";
 
 export * from "../core/types.ts";
+export type { InitializeTLottieOptions } from "../main/initialize.ts";
 export type { TLottieConfig };
-export { configureTLottie, TLottie };
+export { configureTLottie, initializeTLottie, TLottie };
 
 export interface CreateTLottiePlayerOptions
 	extends Omit<TLottieConfig, "canvas"> {

@@ -298,6 +298,10 @@ export class TLottie {
 		ev: MessageEvent<WorkerToMainMessage>,
 	): void => {
 		const msg = ev.data;
+		// "warmed"/"warmup-error" are initializeTLottie()'s responses, not
+		// scoped to any TLottie instance — this handler only cares about
+		// messages for its own animation id.
+		if (msg.type === "warmed" || msg.type === "warmup-error") return;
 		if (msg.id !== this.id) return;
 		switch (msg.type) {
 			case "meta":

@@ -298,8 +298,28 @@ ctx.onmessage = (ev: MessageEvent<MainToWorkerMessage>) => {
 				.get(msg.id)
 				?.recolor(msg.fitzModifier, msg.layerColorReplacements);
 			break;
+		case "warmup":
+			void handleWarmup(msg.requestId, msg.wasmUrl);
+			break;
 	}
 };
+
+/** Loads (or reuses the already-loaded) wasm module with no canvas/animation involved — lets a caller pay the download+instantiate cost ahead of the first real player. */
+async function handleWarmup(requestId: string, wasmUrl: string): Promise<void> {
+	try {
+		await getWasm(wasmUrl);
+		ctx.postMessage({
+			type: "warmed",
+			requestId,
+		} satisfies WorkerToMainMessage);
+	} catch (error) {
+		ctx.postMessage({
+			type: "warmup-error",
+			requestId,
+			message: error instanceof Error ? error.message : String(error),
+		} satisfies WorkerToMainMessage);
+	}
+}
 
 async function handleInit(id: string, config: WorkerInitConfig): Promise<void> {
 	let bytes: Uint8Array;

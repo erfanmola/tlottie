@@ -173,6 +173,19 @@ configureTLottie({ workerCount: 4 });
 
 Or give one player its own dedicated pool via the `workerCount` prop.
 
+### Eager initialization
+
+By default, the render worker and the wasm binary are both created/fetched lazily — the first `Worker` spins up when the first player mounts, and the wasm binary isn't requested until that player's animation source has resolved. Call `initializeTLottie()` any time earlier (module load, route change, hover intent, whatever fits your app) to warm both up ahead of time, so the first real player has nothing left to wait for:
+
+```ts
+import { initializeTLottie } from "tlottie";
+
+initializeTLottie(); // fire-and-forget is fine
+// or: await initializeTLottie({ workerCount: 4, wasmUrl: "/custom/tlottie.wasm" });
+```
+
+Every worker in the (grown-to-full-size) pool is warmed, since each worker owns its own wasm module instance. Safe to call more than once or against multiple pools.
+
 ## Browser support
 
 Requires `OffscreenCanvas`, `requestAnimationFrame` inside a dedicated Worker, and (for `.tgs`) `DecompressionStream`. All are available in current Chrome/Edge/Firefox/Safari. No fallback path is implemented for older browsers.

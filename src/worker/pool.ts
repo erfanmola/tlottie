@@ -40,6 +40,12 @@ export class TLottieWorkerPool {
 		return this.workers[this.nextIndex];
 	}
 
+	/** Eagerly grows the pool to its full configured `size` (if not already there) and returns every worker in it — each worker owns its own wasm module instance, so warming up "the pool" means warming up every slot, not just the one `getWorker()` would hand back next. */
+	getAllWorkers(): Worker[] {
+		while (this.workers.length < this.size) this.getWorker();
+		return [...this.workers];
+	}
+
 	terminateAll(): void {
 		for (const worker of this.workers) worker.terminate();
 		this.workers = [];
