@@ -3,6 +3,7 @@ import dts from "vite-plugin-dts";
 import { copyWasmPlugin, fixDtsExtensionsPlugin } from "./vite.shared.ts";
 
 export default defineConfig({
+	base: "./",
 	build: {
 		outDir: "dist/vanilla",
 		emptyOutDir: true,

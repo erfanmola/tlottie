@@ -4,6 +4,7 @@ import solid from "vite-plugin-solid";
 import { copyWasmPlugin, fixDtsExtensionsPlugin } from "./vite.shared.ts";
 
 export default defineConfig({
+	base: "./",
 	build: {
 		outDir: "dist/solid",
 		emptyOutDir: true,
