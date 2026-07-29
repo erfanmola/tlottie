@@ -14,7 +14,8 @@ export interface WorkerInitConfig {
 	canvas: OffscreenCanvas;
 	/** Raw fetched/given bytes — may be gzip (.tgs); the worker sniffs and decompresses. */
 	animationData: Uint8Array;
-	wasmUrl: string;
+	/** Omit to let the worker resolve its own bundled default (see tlottie.worker.ts) — resolving it on the main thread instead would break under a consumer's dev-server dep pre-bundling, which relocates the main bundle but not this worker chunk. */
+	wasmUrl?: string;
 	width: number;
 	height: number;
 	speed?: number;
@@ -49,7 +50,7 @@ export type MainToWorkerMessage =
 			fitzModifier?: FitzModifier;
 			layerColorReplacements?: LayerColorReplacementInput[];
 	  }
-	| { type: "warmup"; requestId: string; wasmUrl: string };
+	| { type: "warmup"; requestId: string; wasmUrl?: string };
 
 export type WorkerToMainMessage =
 	| {

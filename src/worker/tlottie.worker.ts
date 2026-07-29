@@ -12,12 +12,26 @@ import type {
 
 const ctx = self as unknown as DedicatedWorkerGlobalScope;
 
+// Resolved here (relative to this worker chunk's own import.meta.url)
+// rather than reusing core/wasm-url.ts's main-thread constant: this file is
+// fetched by the browser as its own module script from a stable path, never
+// touched by a consuming app's dev-server dependency pre-bundling — unlike
+// the main thread's bundle, which a consumer's `vite dev` can relocate
+// (e.g. into `.vite/deps/`), silently breaking any relative URL computed
+// there. Depth also genuinely differs from the main-thread default: this
+// chunk sits one level deeper (`assets/` under each target in a build, and
+// under `src/worker/` instead of `src/core/` in dev).
+export const WORKER_DEFAULT_WASM_URL: URL = import.meta.env.DEV
+	? new URL(/* @vite-ignore */ "../core/tlottie.wasm", import.meta.url)
+	: new URL(/* @vite-ignore */ "../../tlottie.wasm", import.meta.url);
+
 // One compiled wasm module per worker, reused for every animation routed to
 // it — re-instantiating wasm per animation would be the single biggest
 // avoidable cost in this pipeline.
 let wasmPromise: Promise<TLottieWasmExports> | null = null;
-function getWasm(wasmUrl: string): Promise<TLottieWasmExports> {
-	if (!wasmPromise) wasmPromise = loadWasmModule(wasmUrl);
+function getWasm(wasmUrl: string | undefined): Promise<TLottieWasmExports> {
+	if (!wasmPromise)
+		wasmPromise = loadWasmModule(wasmUrl ?? WORKER_DEFAULT_WASM_URL);
 	return wasmPromise;
 }
 
@@ -305,7 +319,10 @@ ctx.onmessage = (ev: MessageEvent<MainToWorkerMessage>) => {
 };
 
 /** Loads (or reuses the already-loaded) wasm module with no canvas/animation involved — lets a caller pay the download+instantiate cost ahead of the first real player. */
-async function handleWarmup(requestId: string, wasmUrl: string): Promise<void> {
+async function handleWarmup(
+	requestId: string,
+	wasmUrl: string | undefined,
+): Promise<void> {
 	try {
 		await getWasm(wasmUrl);
 		ctx.postMessage({

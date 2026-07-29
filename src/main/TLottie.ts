@@ -12,7 +12,6 @@ import type {
 	TLottiePlaybackConfig,
 	TLottieSource,
 } from "../core/types.ts";
-import { DEFAULT_WASM_URL } from "../core/wasm-url.ts";
 import { defaultWorkerPool, TLottieWorkerPool } from "../worker/pool.ts";
 import type {
 	MainToWorkerMessage,
@@ -245,7 +244,7 @@ export class TLottie {
 			config: {
 				canvas: offscreen,
 				animationData: payload,
-				wasmUrl: (this.config.wasmUrl ?? DEFAULT_WASM_URL).toString(),
+				wasmUrl: this.config.wasmUrl?.toString(),
 				width,
 				height,
 				speed: this.config.speed,

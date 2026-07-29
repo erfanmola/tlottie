@@ -1,4 +1,3 @@
-import { DEFAULT_WASM_URL } from "../core/wasm-url.ts";
 import { defaultWorkerPool, TLottieWorkerPool } from "../worker/pool.ts";
 import type {
 	MainToWorkerMessage,
@@ -44,7 +43,7 @@ export function initializeTLottie(
 		(options.workerCount !== undefined
 			? new TLottieWorkerPool(options.workerCount)
 			: defaultWorkerPool);
-	const wasmUrl = (options.wasmUrl ?? DEFAULT_WASM_URL).toString();
+	const wasmUrl = options.wasmUrl?.toString();
 	const workers = pool.getAllWorkers();
 
 	return Promise.all(
