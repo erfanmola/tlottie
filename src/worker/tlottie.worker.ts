@@ -12,18 +12,34 @@ import type {
 
 const ctx = self as unknown as DedicatedWorkerGlobalScope;
 
-// Resolved here (relative to this worker chunk's own import.meta.url)
-// rather than reusing core/wasm-url.ts's main-thread constant: this file is
-// fetched by the browser as its own module script from a stable path, never
-// touched by a consuming app's dev-server dependency pre-bundling — unlike
-// the main thread's bundle, which a consumer's `vite dev` can relocate
-// (e.g. into `.vite/deps/`), silently breaking any relative URL computed
-// there. Depth also genuinely differs from the main-thread default: this
-// chunk sits one level deeper (`assets/` under each target in a build, and
-// under `src/worker/` instead of `src/core/` in dev).
-export const WORKER_DEFAULT_WASM_URL: URL = import.meta.env.DEV
-	? new URL(/* @vite-ignore */ "../core/tlottie.wasm", import.meta.url)
-	: new URL(/* @vite-ignore */ "../../tlottie.wasm", import.meta.url);
+// `new URL('literal', import.meta.url)` (no `@vite-ignore`, no `?url`
+// import specifier) is Vite's own static-asset pattern — the same one Vite
+// emits internally for `new Worker(new URL('./x.ts', import.meta.url))`,
+// which is why that pattern already survives being re-bundled by a
+// consuming app's own Vite build. Vite resolves the literal against this
+// file's real position on disk at every build (`src/worker/` ->
+// `../core/tlottie.wasm` exists there in source, in dist, in a consumer's
+// node_modules — same relative layout every time) and rewrites it to the
+// wasm file's actual emitted/hashed URL, so a downstream bundler that
+// re-processes this file sees the same recognizable pattern and copies the
+// asset again itself. A hand-computed relative path counting "how many
+// directories up does the wasm file sit from this worker chunk" looks
+// similar but is invisible to static analysis — a consumer's bundler has
+// no way to know it needs to copy tlottie.wasm at all.
+//
+// The `?no-inline` query is also load-bearing: every one of this package's
+// 7 build targets is a library build (`build.lib` in each
+// vite.*.config.ts), and Vite/Rolldown unconditionally base64-inlines any
+// asset referenced from a library build regardless of `assetsInlineLimit`
+// — without it, this ~418KB wasm binary gets inlined straight into the
+// worker chunk as a data URI on every build, ballooning it from ~10KB to
+// ~560KB and defeating the whole point of fetching+caching it once (see
+// README's "not bundled per adapter" note). `?no-inline` opts this
+// specific reference out of that.
+export const WORKER_DEFAULT_WASM_URL: URL = new URL(
+	"../core/tlottie.wasm?no-inline",
+	import.meta.url,
+);
 
 // One compiled wasm module per worker, reused for every animation routed to
 // it — re-instantiating wasm per animation would be the single biggest

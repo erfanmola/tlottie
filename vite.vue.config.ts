@@ -1,7 +1,7 @@
 import vue from "@vitejs/plugin-vue";
 import { defineConfig } from "vite";
 import dts from "vite-plugin-dts";
-import { copyWasmPlugin, fixDtsExtensionsPlugin } from "./vite.shared.ts";
+import { fixDtsExtensionsPlugin } from "./vite.shared.ts";
 
 export default defineConfig({
 	base: "./",
@@ -19,7 +19,6 @@ export default defineConfig({
 	},
 	plugins: [
 		vue(),
-		copyWasmPlugin(),
 		// LottiePlayer.vue itself isn't scanned here — full .vue declaration
 		// generation needs vue-tsc; consumers get its runtime export
 		// untyped (still fully functional) while everything else re-exported

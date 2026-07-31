@@ -6,12 +6,13 @@ const WASM_SOURCE = fileURLToPath(new URL("./src/core/tlottie.wasm", import.meta
 const WASM_SHARED_DIR = fileURLToPath(new URL("./dist", import.meta.url));
 
 /**
- * Copies tlottie.wasm to a single shared `dist/tlottie.wasm`, one level up
- * from every `dist/<target>/index.js` — DEFAULT_WASM_URL resolves it via
- * `../tlottie.wasm`. Every one of the 7 build targets used to get its own
- * ~480KB copy (3.4MB of pure duplication across the published package);
- * they all reference this one file instead. Idempotent across the 7
- * sequential builds — each just overwrites it with the same bytes.
+ * Copies tlottie.wasm to `dist/tlottie.wasm`, one level up from
+ * `dist/bin/lottie-to-outline.js` — the CLI reads it straight off disk (see
+ * src/bin/lottie-to-outline.ts), so it needs a real file at a fixed path
+ * rather than the `?url` asset import the browser worker uses. The 7
+ * browser build targets each get their own wasm copy via that `?url`
+ * import instead (resolved and emitted per-target by Vite's own asset
+ * pipeline), so this plugin is only wired into vite.bin.config.ts now.
  */
 export function copyWasmPlugin(): Plugin {
 	return {

@@ -1,7 +1,7 @@
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 import { defineConfig } from "vite";
 import dts from "vite-plugin-dts";
-import { copyWasmPlugin, fixDtsExtensionsPlugin } from "./vite.shared.ts";
+import { fixDtsExtensionsPlugin } from "./vite.shared.ts";
 
 export default defineConfig({
 	base: "./",
@@ -22,7 +22,6 @@ export default defineConfig({
 	},
 	plugins: [
 		svelte(),
-		copyWasmPlugin(),
 		// LottiePlayer.svelte itself isn't scanned here — Svelte component
 		// declarations need svelte-check/svelte2tsx tooling; consumers get
 		// its runtime export untyped (still fully functional) while

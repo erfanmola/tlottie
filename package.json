@@ -1,6 +1,6 @@
 {
 	"name": "tlottie",
-	"version": "0.1.8",
+	"version": "0.1.9",
 	"description": "Fast, web-worker based Lottie/TGS renderer with adapters for React, SolidJS, Vue, Svelte, Web Components and Vanilla JS, backed by the tlottie Rust/WASM engine.",
 	"license": "MIT",
 	"author": "Erfan Mola <hi@erfanxd.ir>",
