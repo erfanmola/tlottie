@@ -12,42 +12,26 @@ import type {
 
 const ctx = self as unknown as DedicatedWorkerGlobalScope;
 
-// `new URL('literal', import.meta.url)` (no `@vite-ignore`, no `?url`
-// import specifier) is Vite's own static-asset pattern — the same one Vite
-// emits internally for `new Worker(new URL('./x.ts', import.meta.url))`,
-// which is why that pattern already survives being re-bundled by a
-// consuming app's own Vite build. Vite resolves the literal against this
-// file's real position on disk at every build (`src/worker/` ->
-// `../core/tlottie.wasm` exists there in source, in dist, in a consumer's
-// node_modules — same relative layout every time) and rewrites it to the
-// wasm file's actual emitted/hashed URL, so a downstream bundler that
-// re-processes this file sees the same recognizable pattern and copies the
-// asset again itself. A hand-computed relative path counting "how many
-// directories up does the wasm file sit from this worker chunk" looks
-// similar but is invisible to static analysis — a consumer's bundler has
-// no way to know it needs to copy tlottie.wasm at all.
-//
-// The `?no-inline` query is also load-bearing: every one of this package's
-// 7 build targets is a library build (`build.lib` in each
-// vite.*.config.ts), and Vite/Rolldown unconditionally base64-inlines any
-// asset referenced from a library build regardless of `assetsInlineLimit`
-// — without it, this ~418KB wasm binary gets inlined straight into the
-// worker chunk as a data URI on every build, ballooning it from ~10KB to
-// ~560KB and defeating the whole point of fetching+caching it once (see
-// README's "not bundled per adapter" note). `?no-inline` opts this
-// specific reference out of that.
-export const WORKER_DEFAULT_WASM_URL: URL = new URL(
-	"../core/tlottie.wasm?no-inline",
-	import.meta.url,
-);
+// No worker-side default: `main/wasm-url.ts` resolves one `new URL(...,
+// import.meta.url)` on the main thread and every call site
+// (TLottie.ts/initialize.ts) always sends it explicitly. A worker chunk
+// that computed its own `import.meta.url`-relative default here would get
+// it wrong once re-bundled — `new Worker(new URL('./worker.js',
+// import.meta.url))` makes this chunk a fresh worker *entry* from a
+// consuming app's own Vite build, so any `import.meta.url` reference
+// already inside it gets double-processed by that second bundling pass and
+// resolves to nothing.
 
 // One compiled wasm module per worker, reused for every animation routed to
 // it — re-instantiating wasm per animation would be the single biggest
 // avoidable cost in this pipeline.
 let wasmPromise: Promise<TLottieWasmExports> | null = null;
 function getWasm(wasmUrl: string | undefined): Promise<TLottieWasmExports> {
-	if (!wasmPromise)
-		wasmPromise = loadWasmModule(wasmUrl ?? WORKER_DEFAULT_WASM_URL);
+	if (!wasmUrl)
+		return Promise.reject(
+			new Error("tlottie: worker received no wasmUrl to load"),
+		);
+	if (!wasmPromise) wasmPromise = loadWasmModule(wasmUrl);
 	return wasmPromise;
 }
 
