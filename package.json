@@ -1,6 +1,6 @@
 {
 	"name": "tlottie",
-	"version": "0.1.10",
+	"version": "0.1.11",
 	"description": "Fast, web-worker based Lottie/TGS renderer with adapters for React, SolidJS, Vue, Svelte, Web Components and Vanilla JS, backed by the tlottie Rust/WASM engine.",
 	"license": "MIT",
 	"author": "Erfan Mola <hi@erfanxd.ir>",
@@ -122,13 +122,13 @@
 		}
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.5.6",
+		"@biomejs/biome": "^2.5.7",
 		"@sveltejs/vite-plugin-svelte": "^7.2.0",
 		"@types/node": "^26.1.2",
-		"@types/react": "^19.2.17",
-		"@types/react-dom": "^19.2.3",
+		"@types/react": "^19.2.18",
+		"@types/react-dom": "^19.2.4",
 		"@typescript/typescript6": "^6.0.2",
-		"@vitejs/plugin-react": "^6.0.4",
+		"@vitejs/plugin-react": "^6.0.5",
 		"@vitejs/plugin-vue": "^6.0.8",
 		"binaryen": "^131.0.0",
 		"react": "^19.2.8",
@@ -137,10 +137,10 @@
 		"solid-js": "^1.9.14",
 		"svelte": "^5.56.8",
 		"typescript": "~7.0.2",
-		"vite": "^8.1.5",
+		"vite": "^8.2.1",
 		"vite-plugin-dts": "^5.0.3",
 		"vite-plugin-solid": "^2.11.14",
-		"vue": "^3.5.40"
+		"vue": "^3.5.41"
 	},
 	"dependencies": {
 		"@neplex/vectorizer": "^0.1.0"
