@@ -4,6 +4,14 @@
 # wasm-opt, and copies it into src/core/tlottie.wasm, where the TS wasm
 # loader (src/core/wasm.ts) expects it.
 #
+# Usage:
+#   sh scripts/build-wasm.sh          regular std build (the shipped default)
+#   sh scripts/build-wasm.sh --no-std no_std build (optional, opt-in)
+#
+# The no_std build is an opt-in cargo feature (tlottie's `no-std` feature);
+# the shipped package keeps the regular std build. Pass --no-std to emit a
+# separate no_std wasm to src/core/tlottie.no-std.wasm instead.
+#
 # Consumers of the built npm package never need a Rust toolchain: the wasm
 # binary is committed as a source asset, this script is only for rebuilding
 # it after pulling submodule updates or changing the Rust source.
@@ -46,10 +54,32 @@ if command -v rustup >/dev/null 2>&1; then
   fi
 fi
 
+no_std_build=0
+if [ "${1:-}" = "--no-std" ]; then
+  no_std_build=1
+fi
+
+out_name="tlottie.wasm"
+if [ "$no_std_build" -eq 1 ]; then
+  out_name="tlottie.no-std.wasm"
+fi
+
+out_path="$repo_root/src/core/$out_name"
+
+if [ "$no_std_build" -eq 0 ]; then
+  # Regular build: `wasm` no longer pulls `std` in tlottie (wasm = ["cpu"]),
+  # so name std explicitly to keep the shipped default std-based.
+  features="wasm,std"
+else
+  # no_std build: tlottie's `no-std` feature pulls hashbrown + dlmalloc
+  # (see src/lib.rs — building without `std` requires it).
+  features="wasm,no-std"
+fi
+
 export CARGO_TARGET_DIR="$repo_root/target-wasm"
 export RUSTFLAGS="${RUSTFLAGS:+$RUSTFLAGS }-C target-feature=+simd128"
 
-build_cmd="cargo build --manifest-path $submodule_dir/Cargo.toml --target $target --profile $profile --no-default-features --features wasm"
+build_cmd="cargo build --manifest-path $submodule_dir/Cargo.toml --target $target --profile $profile --no-default-features --features $features"
 
 if [ -n "$rustup_toolchain" ]; then
   # shellcheck disable=SC2086
@@ -75,10 +105,10 @@ if command -v bunx >/dev/null 2>&1; then
     --dce \
     --vacuum \
     "$built" \
-    -o "$repo_root/src/core/tlottie.wasm"
+    -o "$out_path"
 else
   echo "warning: bunx not found, skipping wasm-opt — output will be larger than usual" >&2
-  cp "$built" "$repo_root/src/core/tlottie.wasm"
+  cp "$built" "$out_path"
 fi
 
-echo "Built $repo_root/src/core/tlottie.wasm ($(wc -c < "$repo_root/src/core/tlottie.wasm" | tr -d ' ') bytes)"
+echo "Built $out_path ($(wc -c < "$out_path" | tr -d ' ') bytes)"

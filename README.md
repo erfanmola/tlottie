@@ -207,8 +207,12 @@ bun run build     # builds dist/ for every adapter
 Rebuilding `src/core/tlottie.wasm` from the submodule (only needed after pulling submodule updates or touching the Rust source) requires a Rust toolchain with the `wasm32-unknown-unknown` target:
 
 ```sh
-bun run build:wasm
+bun run build:wasm            # regular std build (the shipped default)
+bun run build:wasm:no-std     # optional no_std build -> src/core/tlottie.no-std.wasm
 ```
+
+The shipped package keeps the regular std build; the no_std binary is an opt-in cargo feature (`wasm,no-std` — allocator via dlmalloc over memory.grow, no libc imports) and is only produced when explicitly requested.
+
 
 The build uses cargo's `release` profile (`opt-level = 3`, full codegen quality) plus a `wasm-opt -Oz` pass for dead-code elimination and stripping (via the `binaryen` devDependency, no system install needed) — 488KB → 418KB raw, with no measurable render-speed cost (benchmarked; `opt-level = "z"` gets smaller still but is a real ~50% slower render path, not worth it here). What actually ships over the wire is smaller still, since `fetch()` transparently negotiates compression: 163KB gzip, 131KB brotli. Make sure whatever serves `dist/tlottie.wasm` in production sends `Content-Encoding` (most CDNs and static hosts do this automatically — a bare/unconfigured dev server might not).
 
