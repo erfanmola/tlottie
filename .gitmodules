@@ -1,4 +1,4 @@
 [submodule "tlottie"]
 	path = tlottie
 	url = https://github.com/dkaraush/tlottie
-	branch = dev
+	branch = main
