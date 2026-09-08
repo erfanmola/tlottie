@@ -1,6 +1,6 @@
 {
 	"name": "tlottie",
-	"version": "0.1.19",
+	"version": "0.1.20",
 	"description": "Fast, web-worker based Lottie/TGS renderer with adapters for React, SolidJS, Vue, Svelte, Web Components and Vanilla JS, backed by the tlottie Rust/WASM engine.",
 	"license": "MIT",
 	"author": "Erfan Mola <hi@erfanxd.ir>",
@@ -91,7 +91,7 @@
 	"scripts": {
 		"build:wasm": "sh scripts/build-wasm.sh",
 		"build:wasm:no-std": "sh scripts/build-wasm.sh --no-std",
-		"build": "bun scripts/build.ts",
+		"build": "bun run build:wasm && bun scripts/build.ts",
 		"dev": "vite --config demo/vite.config.ts",
 		"typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.react.json && tsc --noEmit -p tsconfig.solid.json && tsc --noEmit -p tsconfig.worker.json && tsc --noEmit -p tsconfig.bin.json",
 		"lint": "bun run typecheck && bunx --bun @biomejs/biome check --write --unsafe src demo",
