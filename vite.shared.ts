@@ -54,8 +54,21 @@ export function fixDtsExtensionsPlugin(outDir: string): Plugin {
 	return {
 		name: "tlottie-fix-dts-extensions",
 		apply: "build",
-		closeBundle() {
+		async closeBundle() {
+			if (outDir === "dist/svelte") {
+				const { emitDts } = await import("svelte2tsx");
+				await emitDts({
+					declarationDir: fileURLToPath(new URL(`./${outDir}`, import.meta.url)),
+					libRoot: fileURLToPath(new URL("./src", import.meta.url)),
+					tsconfig: fileURLToPath(new URL("./tsconfig.svelte.json", import.meta.url)),
+					svelteShimsPath: fileURLToPath(import.meta.resolve("svelte2tsx/svelte-shims-v4.d.ts")),
+				});
+			}
 			walk(outDir);
+			const adapter = outDir.split("/").at(-1);
+			if (existsSync(`${outDir}/${adapter}/index.d.ts`)) {
+				writeFileSync(`${outDir}/index.d.ts`, `export * from "./${adapter}/index";\n`);
+			}
 		},
 	};
 }
@@ -69,7 +82,9 @@ function walk(dir: string): void {
 			walk(full);
 		} else if (entry.endsWith(".d.ts")) {
 			const content = readFileSync(full, "utf8");
-			const fixed = content.replace(/(from\s+["'][^"']+?)\.ts(["'])/g, "$1$2");
+			const fixed = content
+				.replace(/(from\s+["'][^"']+?)\.tsx?(["'])/g, "$1$2")
+				.replace(/^import\s+["'][^"']+\.(?:scss|css)["'];?\s*$/gm, "");
 			if (fixed !== content) writeFileSync(full, fixed);
 		}
 	}

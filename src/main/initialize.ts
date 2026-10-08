@@ -3,7 +3,7 @@ import type {
 	MainToWorkerMessage,
 	WorkerToMainMessage,
 } from "../worker/protocol.ts";
-import { DEFAULT_WASM_URL } from "./wasm-url.ts";
+import { resolveWasmUrl } from "./wasm-url.ts";
 
 export interface InitializeTLottieOptions {
 	/** Warm up a dedicated pool of this size instead of the shared default pool. */
@@ -44,7 +44,7 @@ export function initializeTLottie(
 		(options.workerCount !== undefined
 			? new TLottieWorkerPool(options.workerCount)
 			: defaultWorkerPool);
-	const wasmUrl = (options.wasmUrl ?? DEFAULT_WASM_URL).toString();
+	const wasmUrl = resolveWasmUrl(options.wasmUrl);
 	const workers = pool.getAllWorkers();
 
 	return Promise.all(

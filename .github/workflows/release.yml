@@ -13,7 +13,7 @@ jobs:
    release:
       runs-on: ubuntu-latest
       steps:
-         - uses: actions/checkout@v4
+         - uses: actions/checkout@v7
            with:
               submodules: recursive
 
@@ -36,10 +36,10 @@ jobs:
                 echo "changed=false" >> "$GITHUB_OUTPUT"
               fi
 
-         - uses: actions/setup-node@v4
+         - uses: actions/setup-node@v7
            if: steps.check.outputs.changed == 'true'
            with:
-              node-version: 20
+              node-version: 24
               registry-url: https://registry.npmjs.org
 
          - name: Install Rust toolchain
@@ -52,10 +52,8 @@ jobs:
            if: steps.check.outputs.changed == 'true'
            run: bun install --frozen-lockfile
 
-         # bun run lint && bun run build (via package.json's prepublishOnly)
-         # also run automatically as part of `npm publish` below — this
-         # earlier explicit run just fails fast with a clearer step name if
-         # something's broken, instead of failing deep inside npm's lifecycle.
+         # Build once, test the packed artifacts, then publish those same
+         # artifacts without a second prepublishOnly rebuild.
          - name: Lint
            if: steps.check.outputs.changed == 'true'
            run: bun run lint
@@ -64,9 +62,36 @@ jobs:
            if: steps.check.outputs.changed == 'true'
            run: bun run build
 
+         - name: Test WASM loader
+           if: steps.check.outputs.changed == 'true'
+           run: bun run test
+
+         - name: Test installed package in framework projects
+           if: steps.check.outputs.changed == 'true'
+           run: |
+              bunx playwright install --with-deps chromium
+              bun run test:consumers
+
+         - name: Check Vite 6 and 7 configuration compatibility
+           if: steps.check.outputs.changed == 'true'
+           env:
+              CONSUMER_ADAPTER: core
+           run: |
+              CONSUMER_VITE=6.4.4 bun run test:consumers
+              CONSUMER_VITE=7.3.7 bun run test:consumers
+
+         - name: Upload consumer screenshots and results
+           if: always() && steps.check.outputs.changed == 'true'
+           uses: actions/upload-artifact@v7
+           with:
+              name: consumer-tests
+              path: |
+                 .consumer-tests/*/*.png
+                 .consumer-tests/*/results.json
+
          - name: Publish to npm
            if: steps.check.outputs.changed == 'true'
-           run: npm publish --access public
+           run: npm publish --access public --ignore-scripts
            env:
               NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 

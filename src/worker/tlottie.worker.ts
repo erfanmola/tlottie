@@ -25,14 +25,12 @@ const ctx = self as unknown as DedicatedWorkerGlobalScope;
 // One compiled wasm module per worker, reused for every animation routed to
 // it — re-instantiating wasm per animation would be the single biggest
 // avoidable cost in this pipeline.
-let wasmPromise: Promise<TLottieWasmExports> | null = null;
 function getWasm(wasmUrl: string | undefined): Promise<TLottieWasmExports> {
 	if (!wasmUrl)
 		return Promise.reject(
 			new Error("tlottie: worker received no wasmUrl to load"),
 		);
-	if (!wasmPromise) wasmPromise = loadWasmModule(wasmUrl);
-	return wasmPromise;
+	return loadWasmModule(wasmUrl);
 }
 
 // self.requestAnimationFrame is available in a dedicated worker that owns an

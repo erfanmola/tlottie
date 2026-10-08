@@ -75,12 +75,20 @@ export interface TLottieWasmExports {
 // of reusing a single compiled module across every animation instance
 // routed to that worker, instead of re-instantiating wasm per-animation).
 let modulePromise: Promise<TLottieWasmExports> | null = null;
+let moduleUrl: string | null = null;
 
 export function loadWasmModule(
 	wasmUrl: string | URL,
 ): Promise<TLottieWasmExports> {
-	if (!modulePromise) {
-		modulePromise = instantiate(wasmUrl);
+	const url = wasmUrl.toString();
+	if (!modulePromise || moduleUrl !== url) {
+		moduleUrl = url;
+		const pending = instantiate(url);
+		modulePromise = pending;
+		void pending.catch(() => {
+			// A failed download must not poison every subsequent player.
+			if (modulePromise === pending) modulePromise = null;
+		});
 	}
 	return modulePromise;
 }
@@ -89,10 +97,15 @@ async function instantiate(wasmUrl: string | URL): Promise<TLottieWasmExports> {
 	// tlottie.wasm is a stable, versioned build artifact — force-cache skips
 	// revalidation roundtrips on repeat loads, same as the animation fetch
 	// cache in main/cache.ts.
+	const response = await fetch(wasmUrl, { cache: "force-cache" });
+	if (!response.ok)
+		throw new Error(
+			`tlottie: WASM request failed (${response.status}) at ${wasmUrl}`,
+		);
 	if (typeof WebAssembly.instantiateStreaming === "function") {
 		try {
 			const { instance } = await WebAssembly.instantiateStreaming(
-				fetch(wasmUrl, { cache: "force-cache" }),
+				response.clone(),
 				{},
 			);
 			return instance.exports as unknown as TLottieWasmExports;
@@ -102,9 +115,7 @@ async function instantiate(wasmUrl: string | URL): Promise<TLottieWasmExports> {
 			// or file:// contexts don't.
 		}
 	}
-	const bytes = await (
-		await fetch(wasmUrl, { cache: "force-cache" })
-	).arrayBuffer();
+	const bytes = await response.arrayBuffer();
 	const { instance } = await WebAssembly.instantiate(bytes, {});
 	return instance.exports as unknown as TLottieWasmExports;
 }

@@ -1,6 +1,6 @@
 {
 	"name": "tlottie",
-	"version": "0.1.24",
+	"version": "0.1.25",
 	"description": "Fast, web-worker based Lottie/TGS renderer with adapters for React, SolidJS, Vue, Svelte, Web Components and Vanilla JS, backed by the tlottie Rust/WASM engine.",
 	"license": "MIT",
 	"author": "Erfan Mola <hi@erfanxd.ir>",
@@ -83,7 +83,8 @@
 			"import": "./dist/svelte/index.js"
 		},
 		"./svelte/style.css": "./dist/svelte/tlottie.css",
-		"./package.json": "./package.json"
+		"./package.json": "./package.json",
+		"./wasm": "./dist/tlottie.wasm"
 	},
 	"files": [
 		"dist"
@@ -93,7 +94,9 @@
 		"build:wasm:no-std": "sh scripts/build-wasm.sh --no-std",
 		"build": "bun run build:wasm && bun scripts/build.ts",
 		"dev": "vite --config demo/vite.config.ts",
-		"typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.react.json && tsc --noEmit -p tsconfig.solid.json && tsc --noEmit -p tsconfig.worker.json && tsc --noEmit -p tsconfig.bin.json",
+		"typecheck": "bun scripts/typecheck.ts",
+		"test": "bun test",
+		"test:consumers": "node scripts/test-consumers.mjs",
 		"lint": "bun run typecheck && bunx --bun @biomejs/biome check --write --unsafe src demo",
 		"prepublishOnly": "bun run lint && bun run build",
 		"outline": "bun run src/bin/lottie-to-outline.ts"
@@ -102,7 +105,7 @@
 		"react": "^18 || ^19",
 		"react-dom": "^18 || ^19",
 		"solid-js": "^1",
-		"svelte": "^4 || ^5",
+		"svelte": "^5",
 		"vue": "^3"
 	},
 	"peerDependenciesMeta": {
@@ -123,23 +126,26 @@
 		}
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.5.14",
-		"@sveltejs/vite-plugin-svelte": "^7.3.0",
-		"@types/node": "^26.6.1",
+		"@biomejs/biome": "^2.5.15",
+		"@playwright/test": "^1.64.0",
+		"@sveltejs/vite-plugin-svelte": "^7.3.1",
+		"@types/node": "^26.6.4",
 		"@types/react": "^19.3.0",
 		"@types/react-dom": "^19.3.0",
-		"@typescript/typescript6": "^6.0.2",
-		"@vitejs/plugin-react": "^6.1.1",
+		"@vitejs/plugin-react": "^6.1.2",
 		"@vitejs/plugin-vue": "^6.0.9",
+		"@vue/language-core": "^3.3.12",
 		"binaryen": "^132.0.0",
 		"react": "^19.3.0",
 		"react-dom": "^19.3.0",
-		"sass": "^1.104.1",
-		"solid-js": "^1.9.15",
-		"svelte": "^5.57.0",
-		"typescript": "~7.0.2",
-		"vite": "^8.3.0",
-		"vite-plugin-dts": "^5.1.0",
+		"sass": "^1.105.1",
+		"solid-js": "^1.9.17",
+		"svelte": "^5.57.2",
+		"svelte2tsx": "^0.7.61",
+		"typescript": "npm:@typescript/typescript6@^6.0.2",
+		"typescript7": "npm:typescript@~7.0.2",
+		"vite": "^8.3.4",
+		"vite-plugin-dts": "^5.1.2",
 		"vite-plugin-solid": "^2.11.14",
 		"vue": "^3.5.43"
 	},

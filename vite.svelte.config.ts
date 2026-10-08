@@ -22,10 +22,8 @@ export default defineConfig({
 	},
 	plugins: [
 		svelte(),
-		// LottiePlayer.svelte itself isn't scanned here — Svelte component
-		// declarations need svelte-check/svelte2tsx tooling; consumers get
-		// its runtime export untyped (still fully functional) while
-		// everything else re-exported from this entry stays fully typed.
+		// Component declarations are emitted by svelte2tsx in the final
+		// declaration fixup hook; this pass emits the shared TypeScript API.
 		dts({
 			tsconfigPath: "tsconfig.svelte.json",
 			include: ["src/svelte/index.ts", "src/svelte/shims.d.ts", "src/core/**/*.ts", "src/main/**/*.ts", "src/worker/pool.ts", "src/worker/protocol.ts"],

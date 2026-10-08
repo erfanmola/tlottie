@@ -19,14 +19,10 @@ export default defineConfig({
 	},
 	plugins: [
 		vue(),
-		// LottiePlayer.vue itself isn't scanned here — full .vue declaration
-		// generation needs vue-tsc; consumers get its runtime export
-		// untyped (still fully functional) while everything else re-exported
-		// from this entry stays fully typed.
 		dts({
+			processor: "vue",
 			tsconfigPath: "tsconfig.vue.json",
-			include: ["src/vue/index.ts", "src/vue/shims.d.ts", "src/core/**/*.ts", "src/main/**/*.ts", "src/worker/pool.ts", "src/worker/protocol.ts"],
-			exclude: ["**/*.vue"],
+			include: ["src/vue/index.ts", "src/vue/**/*.vue", "src/core/**/*.ts", "src/main/**/*.ts", "src/worker/pool.ts", "src/worker/protocol.ts"],
 			insertTypesEntry: false,
 		}),
 		fixDtsExtensionsPlugin("dist/vue"),

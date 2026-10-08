@@ -11,7 +11,7 @@ Fast, Web Worker–based [Lottie](https://airbnb.io/lottie/) and TGS (Telegram s
 - **Fast core.** The underlying [tlottie](https://github.com/dkaraush/tlottie) engine benchmarks 23–73% faster frame times than rlottie/thorvg (see its own README for numbers).
 - **TGS support.** Gzipped Lottie (`.tgs`, Telegram stickers) is decompressed in-worker using the browser-native `DecompressionStream` — no `pako`/`fflate` dependency.
 - **Skeleton loading.** Pass an outline SVG and get a CSS `mask-image` shimmer while the animation loads or if it fails — generate that SVG with the bundled `tlottie-outline` CLI (`bunx tlottie-outline --input animation.json`).
-- **Small.** Each framework adapter is ~3–4KB gzipped; the shared WASM binary (~418KB raw, ~131KB brotli / ~163KB gzip) is fetched once and cached, not bundled per adapter.
+- **Small.** Each framework adapter is ~3–4KB gzipped. The WASM binary (~534KB raw, ~166KB brotli / ~211KB gzip) is fetched lazily and reused within each worker. Each adapter's distribution includes its own asset copy.
 
 ## Install
 
@@ -21,6 +21,9 @@ bun add tlottie
 ```
 
 Framework peer dependencies (`react`, `solid-js`, `vue`, `svelte`) are optional — only install the one matching the adapter you use.
+The Svelte adapter requires **Svelte 5**; its compiled runtime is incompatible with Svelte 4.
+
+For Vite projects, read the [Vite configuration](#vite-configuration) below before starting the dev server.
 
 ## Quick start
 
@@ -28,6 +31,7 @@ Framework peer dependencies (`react`, `solid-js`, `vue`, `svelte`) are optional 
 
 ```tsx
 import { LottiePlayer } from "tlottie/react";
+import "tlottie/react/style.css";
 
 <LottiePlayer src="/animation.json" loop autoplay />;
 ```
@@ -36,6 +40,7 @@ import { LottiePlayer } from "tlottie/react";
 
 ```tsx
 import { LottiePlayer } from "tlottie/solid";
+import "tlottie/solid/style.css";
 
 <LottiePlayer src="/animation.json" loop autoplay />;
 ```
@@ -45,6 +50,7 @@ import { LottiePlayer } from "tlottie/solid";
 ```vue
 <script setup>
 import { LottiePlayer } from "tlottie/vue";
+import "tlottie/vue/style.css";
 </script>
 
 <template>
@@ -57,6 +63,7 @@ import { LottiePlayer } from "tlottie/vue";
 ```svelte
 <script>
 	import { LottiePlayer } from "tlottie/svelte";
+	import "tlottie/svelte/style.css";
 </script>
 
 <LottiePlayer src="/animation.json" loop autoplay />
@@ -66,6 +73,7 @@ import { LottiePlayer } from "tlottie/vue";
 
 ```js
 import "tlottie/webcomponent";
+import "tlottie/webcomponent/style.css";
 ```
 
 ```html
@@ -76,6 +84,7 @@ import "tlottie/webcomponent";
 
 ```js
 import { createTLottiePlayer } from "tlottie/vanilla";
+import "tlottie/vanilla/style.css";
 
 const { tlottie, destroy } = createTLottiePlayer(document.getElementById("app"), {
 	src: "/animation.json",
@@ -84,11 +93,60 @@ const { tlottie, destroy } = createTLottiePlayer(document.getElementById("app"),
 });
 ```
 
-Each adapter also ships a stylesheet for the skeleton shimmer (only needed if you use the `outline` prop):
+Import the adapter stylesheet for canvas positioning, visibility, and the optional shimmer. Give the player an explicit width and height; its absolutely positioned canvas does not size the wrapper:
+
+```css
+.tlottie-player {
+	width: 256px;
+	height: 256px;
+}
+```
+
+For Web Components, also size the `<tlottie-player>` host (`display: block; width: 256px; height: 256px`). The core `TLottie` API takes your own canvas and does not need an adapter stylesheet.
+
+Stylesheet paths:
 
 ```js
 import "tlottie/react/style.css"; // or /solid, /vue, /svelte, /vanilla, /webcomponent
 ```
+
+### Vite configuration
+
+Add `tlottie` to `optimizeDeps.exclude` while keeping your framework's usual plugins:
+
+```ts
+import { defineConfig } from "vite";
+
+export default defineConfig({
+	// plugins: [react()], [vue()], [solid()], or [svelte()]
+	optimizeDeps: { exclude: ["tlottie"] },
+});
+```
+
+This covers `tlottie` and its adapter subpaths. Do not put them in `optimizeDeps.include`. Vite 6/7 prebundling moves the package's relative worker/WASM URLs into `node_modules/.vite/deps`, causing a worker 404 and a blank player. Vite 8.3.4 passed our default-config tests, but excluding the package is the compatible setup across these versions. Production bundling works without the exclusion. See Vite's [dependency optimization options](https://vite.dev/config/dep-optimization-options) and [worker URL issue](https://github.com/vitejs/vite/issues/20859).
+
+After changing the configuration or upgrading tlottie, restart with `vite --force` (or remove `node_modules/.vite`) to clear old optimized entries.
+
+The default worker and WASM assets are bundled automatically; no Rust toolchain, manual copy, or WASM plugin is needed. Deploy the entire app build output, including `assets/`. Nested Vite `base` paths are supported and tested. Mount players on the client in SSR applications; rendering requires browser APIs.
+
+### WASM troubleshooting and custom hosting
+
+If the player stays blank, check its dimensions and stylesheet first, then inspect the worker and `.wasm` requests in DevTools. A URL under `.vite/deps/assets/` indicates the optimization issue above. A WASM URL returning HTML usually indicates a missing deployed asset or an SPA fallback route. Serve the binary with `Content-Type: application/wasm`; the loader also supports other MIME types by falling back to buffered instantiation without downloading it twice. Failed WASM loads can be retried by creating a new player or calling `initializeTLottie()` again.
+
+To host the binary yourself, use the same installed package version's exported asset:
+
+```ts
+import wasmUrl from "tlottie/wasm?url&no-inline"; // Vite URL import
+import { initializeTLottie } from "tlottie";
+
+await initializeTLottie({ wasmUrl });
+// Also pass wasmUrl to each player using this custom binary:
+// <LottiePlayer src="/animation.json" wasmUrl={wasmUrl} />
+```
+
+Alternatively copy `node_modules/tlottie/dist/tlottie.wasm` to your public directory and pass its served URL. Relative overrides are resolved against the page's `document.baseURI`, including a `<base>` element, before being sent to the worker. Cross-origin animation/WASM hosts must allow CORS. If your site uses CSP, allow the worker origin in `worker-src`, animation/WASM hosts in `connect-src`, and WebAssembly compilation through `script-src 'wasm-unsafe-eval'` where your browser requires it.
+
+See [consumer testing](./docs/consumer-testing.md) for the tested configurations and reproduction commands.
 
 ## Loading data
 
@@ -181,7 +239,7 @@ By default, the render worker and the wasm binary are both created/fetched lazil
 ```ts
 import { initializeTLottie } from "tlottie";
 
-initializeTLottie(); // fire-and-forget is fine
+initializeTLottie().catch(console.error); // handle download/initialization failures
 // or: await initializeTLottie({ workerCount: 4, wasmUrl: "/custom/tlottie.wasm" });
 ```
 
@@ -204,6 +262,8 @@ bun run lint      # typecheck + biome
 bun run build     # builds dist/ for every adapter
 ```
 
+Native TypeScript 7 runs the repository and installed-package type checks. Vue/Svelte declaration generation uses the TypeScript 6 compiler API, which their current tooling requires; both are installed as development dependencies.
+
 Rebuilding `src/core/tlottie.wasm` from the submodule (only needed after pulling submodule updates or touching the Rust source) requires a Rust toolchain with the `wasm32-unknown-unknown` target:
 
 ```sh
@@ -214,7 +274,7 @@ bun run build:wasm:no-std     # optional no_std build -> src/core/tlottie.no-std
 The shipped package keeps the regular std build; the no_std binary is an opt-in cargo feature (`wasm,no-std` — allocator via dlmalloc over memory.grow, no libc imports) and is only produced when explicitly requested.
 
 
-The build uses cargo's `release` profile (`opt-level = 3`, full codegen quality) plus a `wasm-opt -Oz` pass for dead-code elimination and stripping (via the `binaryen` devDependency, no system install needed) — 488KB → 418KB raw, with no measurable render-speed cost (benchmarked; `opt-level = "z"` gets smaller still but is a real ~50% slower render path, not worth it here). What actually ships over the wire is smaller still, since `fetch()` transparently negotiates compression: 163KB gzip, 131KB brotli. Make sure whatever serves `dist/tlottie.wasm` in production sends `Content-Encoding` (most CDNs and static hosts do this automatically — a bare/unconfigured dev server might not).
+The build uses cargo's `release` profile (`opt-level = 3`) plus `wasm-opt -Oz` for dead-code elimination and stripping (via the `binaryen` devDependency, no system install needed). The current binary is 533,523 bytes; compressed sizes are approximately 211KB gzip and 166KB brotli. Configure compression on your host to reduce transfer size; `fetch()` handles it transparently.
 
 ### Repo layout
 
@@ -227,8 +287,8 @@ The build uses cargo's `release` profile (`opt-level = 3`, full codegen quality)
 
 ### CI
 
-- `.github/workflows/pages.yml` — builds `demo/` and deploys it to [GitHub Pages](https://erfanmola.github.io/tlottie/) on every push to `main`.
-- `.github/workflows/release.yml` — on a `package.json` version bump landing on `main`, publishes to npm and creates a matching GitHub Release with auto-generated notes. Needs an `NPM_TOKEN` repo secret (an npm automation token with publish access) to actually publish; without it the workflow fails at the publish step.
+- `.github/workflows/pages.yml` — builds `demo/` and deploys it to [GitHub Pages](https://erfanmola.github.io/tlottie/) on every push to `master`.
+- `.github/workflows/release.yml` — on a `package.json` version bump landing on `master`, builds and tests the installed package in fresh framework projects before publishing to npm and creating a matching GitHub Release. Needs the `NPM_TOKEN` repo secret to publish. Consumer screenshots and request results are uploaded as a workflow artifact.
 
 ## License
 

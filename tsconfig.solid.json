@@ -4,6 +4,6 @@
 		"jsx": "preserve",
 		"jsxImportSource": "solid-js"
 	},
-	"exclude": ["src/react", "src/vue", "src/svelte", "src/worker"],
+	"exclude": ["src/react", "src/vue", "src/svelte", "src/worker/tlottie.worker.ts"],
 	"include": ["src/solid"]
 }

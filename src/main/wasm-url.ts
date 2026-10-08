@@ -23,3 +23,10 @@ export const DEFAULT_WASM_URL: URL = new URL(
 	"../core/tlottie.wasm?no-inline",
 	import.meta.url,
 );
+
+/** Resolve overrides against the page, before sending them to a worker. */
+export function resolveWasmUrl(wasmUrl?: string | URL): string {
+	return wasmUrl === undefined
+		? DEFAULT_WASM_URL.href
+		: new URL(wasmUrl.toString(), document.baseURI).href;
+}

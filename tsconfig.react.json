@@ -3,6 +3,6 @@
 	"compilerOptions": {
 		"jsx": "react-jsx"
 	},
-	"exclude": ["src/solid", "src/vue", "src/svelte", "src/worker"],
+	"exclude": ["src/solid", "src/vue", "src/svelte", "src/worker/tlottie.worker.ts"],
 	"include": ["src/react"]
 }
