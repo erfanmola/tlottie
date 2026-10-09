@@ -16,11 +16,13 @@ Each project uses its usual framework plugin and loads both the JSON and gzip/TG
 
 The harness also checks that every public export exists in the tarball and compiles each adapter's public API/component props with TypeScript 7 and `skipLibCheck: false`. This catches missing declaration entry points, dangling declaration imports, and missing component types that a Vite runtime build can overlook.
 
+For 0.2.0, each project initializes two workers through the root package before mounting its two players. It verifies that the adapter exports the same `TLottie` class as the root, counts actual browser worker creation, and requires exactly two workers after playback starts. Component prop checks pass a pool constructed through the root package, exercising canonical shared types too.
+
 The browser checks for two canvases, verifies that each canvas screenshot changes between animation frames, records worker/WASM HTTP responses, captures page screenshots, and rejects browser errors. These checks establish actual playback rather than merely a successful build or a load event. Screenshots should also be inspected before release.
 
 ## Verified versions
 
-The 0.1.25 release was tested with Chrome on macOS, Vite 8.3.4, React 19.3.0, Vue 3.5.43, Solid 1.9.17, and Svelte 5.57.2.
+The 0.2.0 release was tested with Chrome on macOS, Vite 8.3.4, React 19.3.0, Vue 3.5.43, Solid 1.9.17, and Svelte 5.57.2.
 
 | Installed consumer | Default Vite 8 dev | Excluded Vite 8 dev | Production under `/nested/` |
 | --- | --- | --- | --- |

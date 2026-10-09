@@ -88,7 +88,12 @@ export interface TLottieColorConfig {
 }
 
 /** Reason an 'error' event was raised. */
-export type TLottieErrorReason = "fetch" | "decompress" | "parse" | "wasm";
+export type TLottieErrorReason =
+	| "fetch"
+	| "decompress"
+	| "parse"
+	| "wasm"
+	| "worker";
 
 export interface TLottieError {
 	reason: TLottieErrorReason;

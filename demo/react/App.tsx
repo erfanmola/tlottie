@@ -23,7 +23,6 @@ export function App() {
 				loop={loop}
 				direction={direction}
 				autoplay
-				workerCount={2}
 				lottieRefCallback={(t) => {
 					tlottieRef.current = t;
 				}}

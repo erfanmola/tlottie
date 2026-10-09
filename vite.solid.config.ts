@@ -1,7 +1,7 @@
 import { defineConfig } from "vite";
 import dts from "vite-plugin-dts";
 import solid from "vite-plugin-solid";
-import { fixDtsExtensionsPlugin } from "./vite.shared.ts";
+import { fixDtsExtensionsPlugin, sharedCorePlugin } from "./vite.shared.ts";
 
 export default defineConfig({
 	base: "./",
@@ -19,6 +19,7 @@ export default defineConfig({
 		},
 	},
 	plugins: [
+		sharedCorePlugin(),
 		solid(),
 		dts({
 			tsconfigPath: "tsconfig.solid.json",

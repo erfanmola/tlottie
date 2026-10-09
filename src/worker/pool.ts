@@ -14,16 +14,22 @@ export class TLottieWorkerPool {
 	private size: number;
 
 	constructor(size: number = DEFAULT_POOL_SIZE) {
-		this.size = Math.max(1, size);
+		this.validateSize(size);
+		this.size = size;
 	}
 
 	setSize(size: number): void {
-		if (size < 1)
-			throw new Error("tlottie: worker pool size must be at least 1");
+		this.validateSize(size);
+		if (size < this.workers.length)
+			throw new Error(
+				"tlottie: cannot shrink an initialized worker pool; destroy its players and call terminateAll() first",
+			);
 		this.size = size;
-		while (this.workers.length > size) {
-			this.workers.pop()?.terminate();
-		}
+	}
+
+	private validateSize(size: number): void {
+		if (!Number.isInteger(size) || size < 1)
+			throw new Error("tlottie: worker pool size must be a positive integer");
 	}
 
 	getWorker(): Worker {
@@ -31,6 +37,15 @@ export class TLottieWorkerPool {
 			const worker = new Worker(
 				new URL("./tlottie.worker.ts", import.meta.url),
 				{ type: "module" },
+			);
+			worker.addEventListener(
+				"error",
+				() => {
+					this.workers = this.workers.filter((existing) => existing !== worker);
+					this.nextIndex = -1;
+					worker.terminate();
+				},
+				{ once: true },
 			);
 			this.workers.push(worker);
 			this.nextIndex = this.workers.length - 1;

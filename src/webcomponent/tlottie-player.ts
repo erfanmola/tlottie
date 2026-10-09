@@ -12,7 +12,6 @@ const OBSERVED_ATTRIBUTES = [
 	"autoplay",
 	"direction",
 	"outline",
-	"worker-count",
 	"fitz",
 	"play-on-click",
 ] as const;
@@ -21,7 +20,7 @@ const LIVE_TWEAK_ATTRIBUTES = new Set(["speed", "loop", "direction"]);
 /**
  * `<tlottie-player src="..." loop autoplay></tlottie-player>`
  *
- * Attribute changes to `src`/`data`/`outline`/`worker-count`/`fitz` remount
+ * Attribute changes to `src`/`data`/`outline`/`fitz` remount
  * the player (they change the underlying source or worker pool); `speed`,
  * `loop`, and `direction` are applied live to the running instance instead.
  */
@@ -94,7 +93,6 @@ export class TLottiePlayerElement extends HTMLElement {
 
 	private mount(): void {
 		this.unmount();
-		const workerCountAttr = this.getAttribute("worker-count");
 		const fitzAttr = this.getAttribute("fitz");
 		const speedAttr = this.getAttribute("speed");
 
@@ -111,8 +109,6 @@ export class TLottiePlayerElement extends HTMLElement {
 			autoplay: this.hasAttribute("autoplay")
 				? this.getAttribute("autoplay") !== "false"
 				: true,
-			workerCount:
-				workerCountAttr !== null ? Number(workerCountAttr) : undefined,
 			fitzModifier:
 				fitzAttr !== null ? (Number(fitzAttr) as FitzModifier) : undefined,
 			playOnClick: this.hasAttribute("play-on-click"),

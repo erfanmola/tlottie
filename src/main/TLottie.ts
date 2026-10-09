@@ -12,7 +12,7 @@ import type {
 	TLottiePlaybackConfig,
 	TLottieSource,
 } from "../core/types.ts";
-import { defaultWorkerPool, TLottieWorkerPool } from "../worker/pool.ts";
+import { defaultWorkerPool, type TLottieWorkerPool } from "../worker/pool.ts";
 import type {
 	MainToWorkerMessage,
 	WorkerToMainMessage,
@@ -27,8 +27,6 @@ export interface TLottieConfig
 	canvas: HTMLCanvasElement;
 	wasmUrl?: string | URL;
 	quality?: Partial<RenderQuality>;
-	/** Spins up a dedicated pool of this size just for this player, instead of using the shared default pool. */
-	workerCount?: number;
 	/** Advanced: bring your own worker pool (e.g. to share one across a subset of players). */
 	pool?: TLottieWorkerPool;
 	/** Keep rendering while off-screen (skips the IntersectionObserver pause). */
@@ -46,7 +44,7 @@ export interface TLottieEventPayload {
 
 export type TLottieListener = (payload: TLottieEventPayload) => void;
 
-/** Sets the default worker pool size for players that don't bring their own pool/workerCount. Call once, before creating players. */
+/** Sets the default worker pool size for players that don't bring their own pool. Call once, before creating players. */
 export function configureTLottie(options: { workerCount?: number }): void {
 	if (options.workerCount !== undefined)
 		defaultWorkerPool.setSize(options.workerCount);
@@ -94,17 +92,21 @@ export class TLottie {
 	constructor(config: TLottieConfig) {
 		this.config = config;
 		this.canvas = config.canvas;
-		this.pool =
-			config.pool ??
-			(config.workerCount !== undefined
-				? new TLottieWorkerPool(config.workerCount)
-				: defaultWorkerPool);
+		this.pool = config.pool ?? defaultWorkerPool;
 
 		// Defer to the next frame: the caller's mount hook may run before the
 		// canvas has committed layout, and getBoundingClientRect() below needs
 		// real dimensions.
 		requestAnimationFrame(() => {
-			if (!this.destroyed) this.start();
+			if (this.destroyed) return;
+			try {
+				this.start();
+			} catch (error) {
+				this.handleError({
+					reason: "worker",
+					message: error instanceof Error ? error.message : String(error),
+				});
+			}
 		});
 	}
 
@@ -188,6 +190,7 @@ export class TLottie {
 		} satisfies MainToWorkerMessage);
 		this.destroyed = true;
 		this.worker?.removeEventListener("message", this.onMessage);
+		this.worker?.removeEventListener("error", this.onWorkerError);
 		this.worker = null;
 		this.resizeObserver?.disconnect();
 		this.resizeObserver = null;
@@ -203,6 +206,7 @@ export class TLottie {
 		const offscreen = this.canvas.transferControlToOffscreen();
 		this.worker = this.pool.getWorker();
 		this.worker.addEventListener("message", this.onMessage);
+		this.worker.addEventListener("error", this.onWorkerError);
 
 		intersectionRegistry.set(this.id, this);
 		sharedIntersectionObserver?.observe(this.canvas);
@@ -318,6 +322,15 @@ export class TLottie {
 				this.handleError(msg.error);
 				break;
 		}
+	};
+
+	private readonly onWorkerError = (event: ErrorEvent): void => {
+		this.handleError({
+			reason: "worker",
+			message:
+				event.message ||
+				"tlottie: render worker failed; check its URL and Vite optimizeDeps.exclude",
+		});
 	};
 
 	private handleError(error: TLottieError): void {

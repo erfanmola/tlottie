@@ -1,7 +1,7 @@
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 import { defineConfig } from "vite";
 import dts from "vite-plugin-dts";
-import { fixDtsExtensionsPlugin } from "./vite.shared.ts";
+import { fixDtsExtensionsPlugin, sharedCorePlugin } from "./vite.shared.ts";
 
 export default defineConfig({
 	base: "./",
@@ -21,6 +21,7 @@ export default defineConfig({
 		},
 	},
 	plugins: [
+		sharedCorePlugin(),
 		svelte(),
 		// Component declarations are emitted by svelte2tsx in the final
 		// declaration fixup hook; this pass emits the shared TypeScript API.

@@ -1,7 +1,7 @@
 import vue from "@vitejs/plugin-vue";
 import { defineConfig } from "vite";
 import dts from "vite-plugin-dts";
-import { fixDtsExtensionsPlugin } from "./vite.shared.ts";
+import { fixDtsExtensionsPlugin, sharedCorePlugin } from "./vite.shared.ts";
 
 export default defineConfig({
 	base: "./",
@@ -18,6 +18,7 @@ export default defineConfig({
 		},
 	},
 	plugins: [
+		sharedCorePlugin(),
 		vue(),
 		dts({
 			processor: "vue",

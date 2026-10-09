@@ -63,6 +63,7 @@ const only = process.env.CONSUMER_ADAPTER;
 const write = (dir, name, data) => writeFileSync(resolve(dir, name), data);
 try {
 	for (const adapter of adapters.filter((a) => !only || a === only)) {
+		const entry = adapter === "core" ? "tlottie" : `tlottie/${adapter}`;
 		const dir = resolve(output, adapter);
 		rmSync(dir, { recursive: true, force: true });
 		mkdirSync(resolve(dir, "public"), { recursive: true });
@@ -115,7 +116,7 @@ try {
 		write(
 			dir,
 			"index.html",
-			`<html><head><link rel="icon" href="data:,"><title>${adapter} consumer</title></head><body><h1>${adapter} installed package</h1><div id="app"></div><script type="module" src="/main.${["react", "solid"].includes(adapter) ? "tsx" : "ts"}"></script></body></html>`,
+			`<html><head><link rel="icon" href="data:,"><title>${adapter} consumer</title></head><body><h1>${adapter} installed package</h1><div id="app"></div><script type="module" src="/bootstrap.ts"></script></body></html>`,
 		);
 		write(
 			dir,
@@ -123,6 +124,11 @@ try {
 			"body{font:16px system-ui;background:#edf2f7;color:#172234} .tlottie-player,tlottie-player,canvas{display:block;width:256px;height:256px} #app{display:flex;gap:24px}",
 		);
 		const common = `import './style.css';\n`;
+		write(
+			dir,
+			"bootstrap.ts",
+			`import { initializeTLottie, TLottie as CoreTLottie } from 'tlottie'; import { TLottie as AdapterTLottie } from '${entry}'; if (CoreTLottie !== AdapterTLottie) throw new Error('adapter has a duplicate core runtime'); initializeTLottie({workerCount:2}).then(() => import('./main.${["react", "solid"].includes(adapter) ? "tsx" : "ts"}'));`,
+		);
 		const props = `src={src} loop autoplay`;
 		const sources = `['/nested/sample.json','/nested/sample.tgs']`;
 		if (adapter === "react")
@@ -187,15 +193,15 @@ try {
 					`import {TLottie} from 'tlottie'; for(const src of ${sources}) {const canvas=document.createElement('canvas'); document.getElementById('app')!.append(canvas); new TLottie({canvas,src,loop:true,autoplay:true});}`,
 			);
 		run("bun", ["install"], dir);
-		const entry = adapter === "core" ? "tlottie" : `tlottie/${adapter}`;
 		let typeTest = `import {TLottie, initializeTLottie} from '${entry}'; const player = new TLottie({canvas:document.createElement('canvas'),src:'/animation.json'}); player.setSpeed(2); void initializeTLottie;`;
-		typeTest += `\n// @ts-expect-error speed must be numeric\nplayer.setSpeed('fast');\n`;
+		typeTest += `import {TLottieWorkerPool} from 'tlottie'; const pool = new TLottieWorkerPool(2);\n// @ts-expect-error speed must be numeric\nplayer.setSpeed('fast');\n`;
+		typeTest += `\n// @ts-expect-error worker counts configure pools, not individual players\nnew TLottie({canvas:document.createElement('canvas'),data:'{}',workerCount:2});\n`;
 		if (["react", "solid"].includes(adapter))
-			typeTest += `import {type LottiePlayerProps, LottiePlayer} from '${entry}'; const props:LottiePlayerProps = {src:'/animation.json',loop:true}; void props; void LottiePlayer;`;
+			typeTest += `import {type LottiePlayerProps, LottiePlayer} from '${entry}'; const props:LottiePlayerProps = {src:'/animation.json',loop:true,pool}; void props; void LottiePlayer;`;
 		if (adapter === "vue")
-			typeTest += `import {LottiePlayer} from '${entry}'; const props:InstanceType<typeof LottiePlayer>['$props'] = {src:'/animation.json',loop:true}; void props;`;
+			typeTest += `import {LottiePlayer} from '${entry}'; const props:InstanceType<typeof LottiePlayer>['$props'] = {src:'/animation.json',loop:true,pool}; void props;`;
 		if (adapter === "svelte")
-			typeTest += `import {type ComponentProps} from 'svelte'; import {LottiePlayer} from '${entry}'; const props:ComponentProps<typeof LottiePlayer> = {src:'/animation.json',loop:true}; void props;`;
+			typeTest += `import {type ComponentProps} from 'svelte'; import {LottiePlayer} from '${entry}'; const props:ComponentProps<typeof LottiePlayer> = {src:'/animation.json',loop:true,pool}; void props;`;
 		write(dir, "types.ts", typeTest);
 		write(
 			dir,
@@ -274,6 +280,16 @@ try {
 			const page = await browser.newPage({
 				viewport: { width: 800, height: 400 },
 			});
+			await page.addInitScript(() => {
+				window.__workerCount = 0;
+				const OriginalWorker = window.Worker;
+				window.Worker = class extends OriginalWorker {
+					constructor(...args) {
+						super(...args);
+						window.__workerCount++;
+					}
+				};
+			});
 			page.on("pageerror", (e) => errors.push(e.message));
 			page.on("console", (msg) => {
 				if (msg.type() === "error") errors.push(msg.text());
@@ -317,7 +333,9 @@ try {
 				await page.screenshot({
 					path: resolve(output, `${adapter}-${mode}.png`),
 				});
+				const workerCount = await page.evaluate(() => window.__workerCount);
 				const passed =
+					workerCount === 2 &&
 					animated &&
 					errors.length === 0 &&
 					responses.some((r) => r.url.includes(".wasm") && r.status === 200);
@@ -338,6 +356,7 @@ try {
 					passed,
 					expectedFailure,
 					animated,
+					workerCount,
 					errors,
 					responses,
 				};

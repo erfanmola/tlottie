@@ -25,7 +25,7 @@ function onError(p: TLottieEventPayload): void {
 </script>
 
 <template>
-	<LottiePlayer :src="src" :outline="outline" :speed="speed" :loop="loop" :direction="direction" autoplay :worker-count="2" :ref="(el: any) => (tlottie = el?.tlottie?.())" @load="onLoad" @error="onError" @complete="appendLog('complete')" />
+	<LottiePlayer :src="src" :outline="outline" :speed="speed" :loop="loop" :direction="direction" autoplay :ref="(el: any) => (tlottie = el?.tlottie?.())" @load="onLoad" @error="onError" @complete="appendLog('complete')" />
 	<div class="controls">
 		<button type="button" @click="tlottie?.play()">Play</button>
 		<button type="button" @click="tlottie?.pause()">Pause</button>

@@ -35,7 +35,6 @@ export interface LottiePlayerProps {
 	layerColorReplacements?: LayerColorReplacementInput[];
 	quality?: Partial<RenderQuality>;
 	wasmUrl?: string | URL;
-	workerCount?: number;
 	pool?: TLottieWorkerPool;
 	forceRender?: boolean;
 	reportFrames?: boolean;
@@ -91,7 +90,6 @@ function mount(): void {
 		fitzModifier: props.fitzModifier,
 		layerColorReplacements: props.layerColorReplacements,
 		quality: props.quality,
-		workerCount: props.workerCount,
 		pool: props.pool,
 		forceRender: props.forceRender,
 		reportFrames: props.reportFrames,

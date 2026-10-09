@@ -1,4 +1,4 @@
-import { defaultWorkerPool, TLottieWorkerPool } from "../worker/pool.ts";
+import { defaultWorkerPool, type TLottieWorkerPool } from "../worker/pool.ts";
 import type {
 	MainToWorkerMessage,
 	WorkerToMainMessage,
@@ -6,7 +6,7 @@ import type {
 import { resolveWasmUrl } from "./wasm-url.ts";
 
 export interface InitializeTLottieOptions {
-	/** Warm up a dedicated pool of this size instead of the shared default pool. */
+	/** Resize and warm the selected shared pool. Each player still uses one worker. */
 	workerCount?: number;
 	/** Advanced: warm up a specific pool instance (e.g. one you're about to pass as `pool` to several players). */
 	pool?: TLottieWorkerPool;
@@ -34,16 +34,13 @@ function generateRequestId(): string {
  * time — by the time a real `TLottie`/`LottiePlayer` mounts, its worker is
  * already warm. Every worker in the (grown-to-full-size) pool is warmed,
  * since each one owns its own wasm module instance. Safe to call multiple
- * times or with different pools; safe to ignore the returned promise.
+ * times or with different pools. Handle rejection if initialization fails.
  */
-export function initializeTLottie(
+export async function initializeTLottie(
 	options: InitializeTLottieOptions = {},
 ): Promise<void> {
-	const pool =
-		options.pool ??
-		(options.workerCount !== undefined
-			? new TLottieWorkerPool(options.workerCount)
-			: defaultWorkerPool);
+	const pool = options.pool ?? defaultWorkerPool;
+	if (options.workerCount !== undefined) pool.setSize(options.workerCount);
 	const wasmUrl = resolveWasmUrl(options.wasmUrl);
 	const workers = pool.getAllWorkers();
 
@@ -52,20 +49,39 @@ export function initializeTLottie(
 			(worker) =>
 				new Promise<void>((resolve, reject) => {
 					const requestId = generateRequestId();
+					const cleanup = () => {
+						worker.removeEventListener("message", onMessage);
+						worker.removeEventListener("error", onError);
+					};
+					const onError = (event: ErrorEvent) => {
+						cleanup();
+						reject(
+							new Error(
+								event.message ||
+									"tlottie: render worker failed to load; check its URL and Vite optimizeDeps.exclude",
+							),
+						);
+					};
 					const onMessage = (ev: MessageEvent<WorkerToMainMessage>): void => {
 						const data = ev.data;
 						if (data.type !== "warmed" && data.type !== "warmup-error") return;
 						if (data.requestId !== requestId) return;
-						worker.removeEventListener("message", onMessage);
+						cleanup();
 						if (data.type === "warmed") resolve();
 						else reject(new Error(data.message));
 					};
 					worker.addEventListener("message", onMessage);
-					worker.postMessage({
-						type: "warmup",
-						requestId,
-						wasmUrl,
-					} satisfies MainToWorkerMessage);
+					worker.addEventListener("error", onError);
+					try {
+						worker.postMessage({
+							type: "warmup",
+							requestId,
+							wasmUrl,
+						} satisfies MainToWorkerMessage);
+					} catch (error) {
+						cleanup();
+						reject(error);
+					}
 				}),
 		),
 	).then(() => undefined);

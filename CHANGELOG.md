@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.0
+
+- Remove the ineffective player-level `workerCount` option from every adapter and the Web Component `worker-count` attribute. Use shared pool configuration or an explicitly shared `pool` instead.
+- Make `initializeTLottie({ workerCount })` resize and warm the shared pool subsequent players actually use, including explicitly supplied pools.
+- Make all packaged adapters import the same core runtime, so root configuration and warmup apply to every adapter. Canonicalize shared declarations so pools from the root package work with adapter props.
+- Validate positive integer pool sizes and reject unsafe shrinking of initialized pools instead of terminating active players' workers.
+- Reject warmup on worker startup failures, report player worker errors, discard failed workers, and allow replacement workers to be created.
+- Extend installed-package checks to verify core identity and that two warmed workers are reused by two players without additional worker creation.
+
 ## 0.1.25
 
 - Resolve custom relative WASM URLs against the page before sending them to a worker.

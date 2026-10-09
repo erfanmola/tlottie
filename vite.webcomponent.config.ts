@@ -1,6 +1,6 @@
 import { defineConfig } from "vite";
 import dts from "vite-plugin-dts";
-import { fixDtsExtensionsPlugin } from "./vite.shared.ts";
+import { fixDtsExtensionsPlugin, sharedCorePlugin } from "./vite.shared.ts";
 
 export default defineConfig({
 	base: "./",
@@ -14,6 +14,7 @@ export default defineConfig({
 		},
 	},
 	plugins: [
+		sharedCorePlugin(),
 		dts({
 			tsconfigPath: "tsconfig.json",
 			include: ["src/webcomponent/**/*.ts", "src/vanilla/**/*.ts", "src/core/**/*.ts", "src/main/**/*.ts", "src/worker/pool.ts", "src/worker/protocol.ts"],

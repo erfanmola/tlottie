@@ -1,18 +1,32 @@
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
 import type { Plugin } from "vite";
 
 const WASM_SOURCE = fileURLToPath(new URL("./src/core/tlottie.wasm", import.meta.url));
 const WASM_SHARED_DIR = fileURLToPath(new URL("./dist", import.meta.url));
 
+/** Keep configuration, warmup, and player classes in one package runtime. */
+export function sharedCorePlugin(): Plugin {
+	const shared = new Set(["src/main/TLottie.ts", "src/main/initialize.ts", "src/main/shimmer.ts", "src/core/types.ts", "src/worker/pool.ts"].map(path => fileURLToPath(new URL(`./${path}`, import.meta.url))));
+	return {
+		name: "tlottie-shared-core",
+		apply: "build",
+		enforce: "pre",
+		resolveId(source, importer) {
+			if (importer && source.startsWith(".") && shared.has(resolve(dirname(importer), source)))
+				return { id: "tlottie", external: true };
+		},
+	};
+}
+
 /**
  * Copies tlottie.wasm to `dist/tlottie.wasm`, one level up from
  * `dist/bin/lottie-to-outline.js` — the CLI reads it straight off disk (see
  * src/bin/lottie-to-outline.ts), so it needs a real file at a fixed path
- * rather than the `?url` asset import the browser worker uses. The 7
- * browser build targets each get their own wasm copy via that `?url`
- * import instead (resolved and emitted per-target by Vite's own asset
- * pipeline), so this plugin is only wired into vite.bin.config.ts now.
+ * rather than the browser asset URL. Only the shared core browser build
+ * emits a browser WASM copy; adapters import that runtime. This plugin
+ * supplies the CLI/custom-hosting copy and is wired into the bin build.
  */
 export function copyWasmPlugin(): Plugin {
 	return {
@@ -65,6 +79,19 @@ export function fixDtsExtensionsPlugin(outDir: string): Plugin {
 				});
 			}
 			walk(outDir);
+			if (outDir !== "dist/core") {
+				// Re-export the canonical declarations too: private pool fields
+				// otherwise make core pools incompatible with adapter props.
+				for (const directory of ["main", "worker", "core"]) {
+					const path = `${outDir}/${directory}`;
+					const source = `dist/core/${directory}`;
+					if (!existsSync(source)) continue;
+					mkdirSync(path, { recursive: true });
+					for (const file of readdirSync(source)) {
+						if (file.endsWith(".d.ts") && existsSync(`dist/core/${directory}/${file}`)) writeFileSync(`${path}/${file}`, `export * from "../../core/${directory}/${file.slice(0, -5)}";\n`);
+					}
+				}
+			}
 			const adapter = outDir.split("/").at(-1);
 			if (existsSync(`${outDir}/${adapter}/index.d.ts`)) {
 				writeFileSync(`${outDir}/index.d.ts`, `export * from "./${adapter}/index";\n`);

@@ -40,7 +40,6 @@ const CONFIG_KEYS = [
 	"fitzModifier",
 	"layerColorReplacements",
 	"quality",
-	"workerCount",
 	"pool",
 	"forceRender",
 	"reportFrames",

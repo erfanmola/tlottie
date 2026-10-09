@@ -29,7 +29,6 @@ function onError(p: TLottieEventPayload): void {
 	{loop}
 	{direction}
 	autoplay
-	workerCount={2}
 	lottieRefCallback={(t) => (tlottie = t)}
 	{onLoad}
 	{onError}

@@ -11,7 +11,7 @@ Fast, Web Worker–based [Lottie](https://airbnb.io/lottie/) and TGS (Telegram s
 - **Fast core.** The underlying [tlottie](https://github.com/dkaraush/tlottie) engine benchmarks 23–73% faster frame times than rlottie/thorvg (see its own README for numbers).
 - **TGS support.** Gzipped Lottie (`.tgs`, Telegram stickers) is decompressed in-worker using the browser-native `DecompressionStream` — no `pako`/`fflate` dependency.
 - **Skeleton loading.** Pass an outline SVG and get a CSS `mask-image` shimmer while the animation loads or if it fails — generate that SVG with the bundled `tlottie-outline` CLI (`bunx tlottie-outline --input animation.json`).
-- **Small.** Each framework adapter is ~3–4KB gzipped. The WASM binary (~534KB raw, ~166KB brotli / ~211KB gzip) is fetched lazily and reused within each worker. Each adapter's distribution includes its own asset copy.
+- **Small.** Adapters add ~0.6–1.4KB gzipped on top of the ~3KB shared core. The WASM binary (~534KB raw, ~166KB brotli / ~211KB gzip) is fetched lazily and reused within each worker. All adapters share one core runtime and browser WASM asset.
 
 ## Install
 
@@ -215,7 +215,7 @@ tlottie.on("load" | "play" | "pause" | "stop" | "frame" | "loopComplete" | "comp
 | `fitzModifier`      | `FitzModifier`                              | Telegram Fitzpatrick skin-tone variant. Parse-time only — changing it recreates the instance. |
 | `layerColorReplacements` | `{ layerNamePrefix, color }[]`          | Recolors layers by name prefix. Parse-time only.                                             |
 | `quality`           | `{ antialias?, curveTolerance? }`           | Render quality knobs.                                                                        |
-| `workerCount`       | `number`                                    | Spins up a dedicated worker pool of this size just for this player.                          |
+| `pool`              | `TLottieWorkerPool`                         | Optional caller-owned pool shared across a group of players. |
 | `forceRender`       | `boolean`                                   | Keep rendering while off-screen (skips the IntersectionObserver auto-pause).                 |
 | `reportFrames`      | `boolean`                                   | Emit throttled (~10Hz) `frame` events, for progress UIs. Off by default (costs a `postMessage` per emission). |
 | `playOnClick`       | `boolean`                                   | Clicking the canvas calls `play()`. Mainly for non-looping animations: they play once, then replay on each click. |
@@ -230,7 +230,23 @@ import { configureTLottie } from "tlottie";
 configureTLottie({ workerCount: 4 });
 ```
 
-Or give one player its own dedicated pool via the `workerCount` prop.
+Each player uses exactly one worker; a larger pool distributes separate players across workers. All adapters and imports from `tlottie` share the same default pool.
+
+For an isolated group, create a pool once and pass the same `pool` to its players and initialization:
+
+```tsx
+import { TLottieWorkerPool, initializeTLottie } from "tlottie";
+import { LottiePlayer } from "tlottie/react";
+
+const pool = new TLottieWorkerPool(2);
+await initializeTLottie({ pool });
+// <LottiePlayer src="/first.json" pool={pool} />
+// <LottiePlayer src="/second.json" pool={pool} />
+```
+
+Pools belong to the application. Destroying one player removes its animation while keeping the shared worker available to other players. After destroying every player using a custom pool, call `pool.terminateAll()` to release its workers. Pool counts must be positive integers. Growing a pool is supported; shrinking below the number of initialized workers throws instead of terminating workers that may have active players. To shrink, destroy the affected players, call `terminateAll()`, then resize.
+
+**Migration from 0.1.x:** Remove player-level `workerCount` props/options and the Web Component `worker-count` attribute. Use `configureTLottie({ workerCount })` or `initializeTLottie({ workerCount })` for the shared default pool, or pass an explicitly shared `pool`.
 
 ### Eager initialization
 
@@ -243,7 +259,7 @@ initializeTLottie().catch(console.error); // handle download/initialization fail
 // or: await initializeTLottie({ workerCount: 4, wasmUrl: "/custom/tlottie.wasm" });
 ```
 
-Every worker in the (grown-to-full-size) pool is warmed, since each worker owns its own wasm module instance. Safe to call more than once or against multiple pools.
+`initializeTLottie({ workerCount: 4 })` sizes and warms the shared default pool that subsequent players use. With an explicit `pool`, the count applies to that pool instead. It never creates an inaccessible private pool. Every worker in the selected pool is warmed, since each owns its own WASM module instance. Repeated initialization reuses those workers. Worker startup failures reject the promise; handle it with `await` or `.catch()`.
 
 ## Browser support
 
